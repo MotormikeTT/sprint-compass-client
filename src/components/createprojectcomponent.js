@@ -18,20 +18,48 @@ const CreateProject = (props) => {
   const initialState = {
     name: "",
     teamName: "",
-    selectedDate: new Date(),
-    storyPointConversion: 0,
-    totalStoryPoint: 0,
-    totalCost: 0,
-    hourlyRate: 0,
+    selectedDate: null,
+    storyPointConversion: "",
+    totalStoryPoint: "",
+    totalCost: "",
+    hourlyRate: "",
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
 
   const [state, setState] = useReducer(reducer, initialState);
 
-  const ADD_PROJECT = gql`mutation {addproject(name:"${state.name}",team:"${state.teamName}",startdate:"${state.selectedDate}",storypointconversion:"${state.storyPointConversion}",totalstorypoints:"${state.totalStoryPoint}", totalcost:"${state.totalCost}", hourlyrate:"${state.hourlyRate}") {name,team,startdate,storypointconversion,totalstorypoints,totalcost,hourlyrate}}`;
+  const ADD_PROJECT = gql`
+    mutation(
+      $name: String
+      $team: String
+      $startdate: String
+      $storypointconversion: Int
+      $totalstorypoints: Int
+      $totalcost: Float
+      $hourlyrate: Float
+    ) {
+      addproject(
+        name: $name
+        team: $team
+        startdate: $startdate
+        storypointconversion: $storypointconversion
+        totalstorypoints: $totalstorypoints
+        totalcost: $totalcost
+        hourlyrate: $hourlyrate
+      ) {
+        name
+        team
+        startdate
+        storypointconversion
+        totalstorypoints
+        totalcost
+        hourlyrate
+      }
+    }
+  `;
 
-  const [addProject, { data }] = useMutation(ADD_PROJECT);
+  const [addProject] = useMutation(ADD_PROJECT);
 
   const handleNameInput = (e) => {
     setState({ name: e.target.value });
@@ -46,29 +74,39 @@ const CreateProject = (props) => {
   };
 
   const handleStoryPointInput = (e) => {
-    setState({ storyPointConversion: e.target.value });
+    setState({ storyPointConversion: parseInt(e.target.value) });
   };
 
   const handleTotalStoryPointInput = (e) => {
-    setState({ totalStoryPoint: e.target.value });
+    setState({ totalStoryPoint: parseInt(e.target.value) });
   };
 
   const handleTotalCostInput = (e) => {
-    setState({ totalCost: e.target.value });
+    setState({ totalCost: parseFloat(e.target.value) });
   };
 
   const handleHourlyRateInput = (e) => {
-    setState({ hourlyRate: e.target.value });
+    setState({ hourlyRate: parseFloat(e.target.value) });
   };
 
   const emptyorundefined =
     state.name === undefined ||
     state.name === "" ||
     state.teamName === undefined ||
-    state.teamName === "";
+    state.teamName === "" ||
+    state.selectedDate === undefined ||
+    state.selectedDate === "" ||
+    state.storyPointConversion === undefined ||
+    state.storyPointConversion === "" ||
+    state.totalStoryPoint === undefined ||
+    state.totalStoryPoint === "" ||
+    state.totalCost === undefined ||
+    state.totalCost === "" ||
+    state.hourlyRate === undefined ||
+    state.hourlyRate === "";
 
   const onAddClicked = async () => {
-    addProject({
+    let response = await addProject({
       variables: {
         name: state.name,
         team: state.teamName,
@@ -82,11 +120,17 @@ const CreateProject = (props) => {
 
     setState({
       name: "",
+      team: "",
+      startdate: "",
+      storypointconversion: "",
+      totalstorypoints: "",
+      totalcost: "",
+      hourlyrate: "",
     });
 
-    data
-      ? sendParentMsg(`added advisory on ${new Date()}`)
-      : sendParentMsg(`send failed - ${data}`);
+    response.data
+      ? sendParentMsg(`added new project on ${new Date()}`)
+      : sendParentMsg(`send failed - ${response.data}`);
   };
 
   const sendParentMsg = (msg) => {

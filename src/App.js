@@ -28,12 +28,12 @@ const App = () => {
     <MuiThemeProvider theme={theme}>
       <AppBar position="static">
         <Toolbar variant="dense">
-          <Typography color="white" style={{ flex: 1 }}>
+          <Typography style={{ flex: 1 }}>
             <Link to="/home" style={{ color: "white", textDecoration: "none" }}>
               SprintCompass
             </Link>
           </Typography>
-          <Typography color="white">
+          <Typography>
             <Link
               to="/createproject"
               style={{ color: "white", textDecoration: "none" }}
