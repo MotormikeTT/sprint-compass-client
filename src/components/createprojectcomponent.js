@@ -143,7 +143,11 @@ const CreateProject = (props) => {
         <Card>
           <CardHeader
             style={{ textAlign: "center" }}
-            title={<Typography>Create Project Page</Typography>}
+            title={
+              <Typography variant="h5" color="primary">
+                Create Project
+              </Typography>
+            }
           />
           <CardContent>
             <TextField
@@ -204,7 +208,12 @@ const CreateProject = (props) => {
               variant="contained"
               onClick={onAddClicked}
               disabled={emptyorundefined}
-              style={{ marginTop: 10 }}
+              style={{
+                marginTop: 25,
+                display: "block",
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
             >
               Create Project
             </Button>
