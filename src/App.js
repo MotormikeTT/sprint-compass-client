@@ -1,16 +1,26 @@
-import React, { useReducer } from "react";
+import React, { useState, useReducer } from "react";
 import { Route, Link, Redirect } from "react-router-dom";
+import Reorder from "@material-ui/icons/Reorder";
 import { MuiThemeProvider } from "@material-ui/core/styles";
-import { AppBar, Toolbar, Typography, Snackbar } from "@material-ui/core";
+import {
+  AppBar,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
+  Snackbar,
+  IconButton,
+} from "@material-ui/core";
 
 import theme from "./theme";
 import Home from "./components/homecomponent";
 import CreateProject from "./components/createprojectcomponent";
+import Timecard from "./components/timecardcomponent";
 
 const App = () => {
   const initialState = {
     snackbarMsg: "",
-    msgFromParent: "data from parent",
+    msgFromParent: "",
     gotData: false,
   };
   const reducer = (state, newState) => ({ ...state, ...newState });
@@ -24,6 +34,13 @@ const App = () => {
   const msgFromChild = (msg) => {
     setState({ snackbarMsg: msg, gotData: true });
   };
+  const [anchorEl, setAnchorEl] = useState(null);
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
   return (
     <MuiThemeProvider theme={theme}>
       <AppBar position="static">
@@ -33,14 +50,31 @@ const App = () => {
               SprintCompass
             </Link>
           </Typography>
-          <Typography>
-            <Link
+          <IconButton
+            onClick={handleClick}
+            color="inherit"
+            style={{ marginLeft: "auto", paddingRight: "1vh" }}
+          >
+            <Reorder />
+          </IconButton>
+          <Menu
+            id="simple-menu"
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+          >
+            <MenuItem
+              component={Link}
               to="/createproject"
-              style={{ color: "white", textDecoration: "none" }}
+              onClick={handleClose}
             >
               Create Project
-            </Link>
-          </Typography>
+            </MenuItem>
+            <MenuItem component={Link} to="/timecard" onClick={handleClose}>
+              Timecard
+            </MenuItem>
+          </Menu>
+          <Typography></Typography>
         </Toolbar>
       </AppBar>
       <div>
@@ -48,6 +82,10 @@ const App = () => {
         <Route
           path="/createproject"
           render={() => <CreateProject dataFromChild={msgFromChild} />}
+        />
+        <Route
+          path="/timecard"
+          render={() => <Timecard dataFromChild={msgFromChild} />}
         />
         {/* <Route
           path="/add"
