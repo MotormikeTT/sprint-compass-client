@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useReducer } from "react";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 import theme from "../theme";
 import { gql, useQuery } from "@apollo/client";
@@ -9,9 +9,11 @@ import {
   Card,
   CardHeader,
   CardContent,
+  Modal,
 } from "@material-ui/core";
 import EditIcon from "@material-ui/icons/Edit";
 import { DataGrid } from "@material-ui/data-grid";
+import CreateProject from "./createprojectcomponent";
 
 const Home = () => {
   const GET_PROJECTS = gql`
@@ -28,6 +30,16 @@ const Home = () => {
       }
     }
   `;
+
+  const initialState = {
+    updateId: null,
+    open: false,
+  };
+
+  const reducer = (state, newState) => ({ ...state, ...newState });
+
+  const [state, setState] = useReducer(reducer, initialState);
+
   const columns = [
     { field: "name", headerName: "Project name", width: 200 },
     { field: "team", headerName: "Team name", width: 200 },
@@ -65,7 +77,9 @@ const Home = () => {
       headerName: "Action",
       disableClickEventBubbling: true,
       renderCell: (params) => {
-        const onClick = () => {};
+        const onClick = () => {
+          setState({ updateId: params.row.id, open: true });
+        };
 
         return (
           <IconButton onClick={onClick}>
@@ -78,7 +92,13 @@ const Home = () => {
 
   const { loading, error, data } = useQuery(GET_PROJECTS);
 
-  const onAddClicked = async () => {};
+  const handleClose = () => {
+    setState({ open: false });
+  };
+
+  const onAddClicked = async () => {
+    setState({ open: true });
+  };
 
   return (
     <MuiThemeProvider theme={theme}>
@@ -88,7 +108,7 @@ const Home = () => {
             style={{ textAlign: "center" }}
             title={
               <Typography variant="h5" color="primary">
-                Create Project
+                Projects
               </Typography>
             }
           />
@@ -108,6 +128,13 @@ const Home = () => {
             >
               Create New Project
             </Button>
+            <Modal
+              style={{ padding: 30, paddingLeft: "25%", paddingRight: "25%" }}
+              open={state.open}
+              onClose={handleClose}
+            >
+              <CreateProject updateId={state.updateId} />
+            </Modal>
           </CardContent>
         </Card>
       )}
