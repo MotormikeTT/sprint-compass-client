@@ -11,11 +11,14 @@ import {
 	FormControl,
 	InputLabel,
 	NativeSelect,
+	IconButton,
 } from "@material-ui/core";
+import EditIcon from "@material-ui/icons/Edit";
 import Modal from "@material-ui/core/Modal";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import Backdrop from "@material-ui/core/Backdrop";
 import Fade from "@material-ui/core/Fade";
+import { DataGrid } from "@material-ui/data-grid";
 
 const CreateProject = (props) => {
 	const initialState = {
@@ -26,6 +29,7 @@ const CreateProject = (props) => {
 		relativeEstimate: "",
 		projects: [],
 		openModal: false,
+		updateId: null,
 	};
 
 	const reducer = (state, newState) => ({ ...state, ...newState });
@@ -35,8 +39,8 @@ const CreateProject = (props) => {
 		mutation(
 			$name: String
 			$description: String
-			$costestimate: String
-			$relativeestimate: Int
+			$costestimate: Float
+			$relativeestimate: Float
 			$projectname: String
 		) {
 			addtask(
@@ -57,6 +61,34 @@ const CreateProject = (props) => {
 
 	const [addTask] = useMutation(ADD_TASK);
 
+	const UPDATE_TASK = gql`
+		mutation(
+			$id: ID
+			$name: String
+			$description: String
+			$costestimate: Float
+			$relativeestimate: Float
+			$projectname: String
+		) {
+			edit(
+				id: $id
+				name: $name
+				description: $description
+				costestimate: $costestimate
+				relativeestimate: $relativeestimate
+				projectname: $projectname
+			) {
+				name
+				description
+				costestimate
+				relativeestimate
+				projectname
+			}
+		}
+	`;
+
+	const [updateTask] = useMutation(UPDATE_TASK);
+
 	const GET_PROJECTS = gql`
 		query {
 			projects {
@@ -68,15 +100,109 @@ const CreateProject = (props) => {
 
 	const { loading, error, data } = useQuery(GET_PROJECTS);
 
-	const ITEM_HEIGHT = 48;
-	const ITEM_PADDING_TOP = 8;
-	const MenuProps = {
-		PaperProps: {
-			style: {
-				maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-				width: 250,
+	const GET_TASKS = gql`
+		query {
+			tasks {
+				id: _id
+				name
+				description
+				costestimate
+				relativeestimate
+				projectname
+			}
+		}
+	`;
+
+	const { data: dataT, error: errorT, loading: loadingT } = useQuery(GET_TASKS);
+
+	const columns = [
+		{ field: "projectname", headerName: "Project", width: 200 },
+		{ field: "name", headerName: "Name", width: 500 },
+		{
+			field: "description",
+			headerName: "Description",
+			width: 500,
+		},
+		{
+			field: "costestimate",
+			headerName: "Cost Estimate",
+			type: "number",
+			width: 200,
+		},
+		{
+			field: "relativeestimate",
+			headerName: "Relative Estimate",
+			type: "number",
+			width: 200,
+		},
+		{
+			field: "",
+			headerName: "Action",
+			disableClickEventBubbling: true,
+			renderCell: (params) => {
+				const onClick = () => {
+					setState({
+						updateId: params.row.id,
+						taskName: params.row.name,
+						description: params.row.description,
+						costEstimate: params.row.costestimate,
+						relativeEstimate: params.row.relativeestimate,
+						projectName: params.row.projectname,
+						openModal: true,
+					});
+				};
+
+				return (
+					<IconButton onClick={onClick}>
+						<EditIcon fontSize="small" />
+					</IconButton>
+				);
 			},
 		},
+	];
+
+	const onButtonClicked = async () => {
+		let response;
+		if (state.updateId !== null) {
+			response = await updateTask({
+				variables: {
+					id: state.updateId,
+					name: state.taskName,
+					description: state.description,
+					costestimate: state.costEstimate === "" ? 0 : state.costEstimate,
+					relativeestimate:
+						state.relativeEstimate === "" ? 0 : state.relativeEstimate,
+					projectname: state.projectName,
+				},
+			});
+
+			response.data
+				? sendParentMsg(`updated task on ${new Date()}`)
+				: sendParentMsg(`send failed - ${response.data}`);
+		} else {
+			response = await addTask({
+				variables: {
+					name: state.taskName,
+					description: state.description,
+					costestimate: state.costEstimate === "" ? 0 : state.costEstimate,
+					relativeestimate:
+						state.relativeEstimate === "" ? 0 : state.relativeEstimate,
+					projectname: state.projectName,
+				},
+			});
+
+			response.data
+				? sendParentMsg(`added new task on ${new Date()}`)
+				: sendParentMsg(`send failed - ${response.data}`);
+		}
+
+		setState({
+			taskName: "",
+			description: "",
+			costEstimate: "",
+			relativeEstimate: "",
+			projectName: "",
+		});
 	};
 
 	const handleNameInput = (e) => {
@@ -95,67 +221,56 @@ const CreateProject = (props) => {
 		setState({ relativeEstimate: parseFloat(e.target.value) });
 	};
 
-	const handleProjectNameChange = (event) => {
-		setState({ projectName: event.target.value });
+	const handleProjectNameChange = (e) => {
+		setState({ projectName: e.target.value });
 	};
 
 	const OpenModal = () => {
-		setState({ openModal: true });
+		setState({ updateId: null, openModal: true });
 	};
 
 	const handleClose = () => {
-		setState({ openModal: false });
-	};
-
-	const emptyorundefined =
-		state.taskName === undefined ||
-		state.taskName === "" ||
-		state.projectname === undefined ||
-		state.projectname === "";
-
-	const onAddClicked = async () => {
-		let response = await addTask({
-			variables: {
-				name: state.taskName,
-				description: state.description,
-				costestimate: state.costEstimate,
-				relativeestimate: state.relativeEstimate,
-				projectname: state.projectName,
-			},
-		});
-
-		setState({
-			taskName: "",
-			description: "",
-			costEstimate: "",
-			relativeEstimate: "",
-			projectName: "",
-		});
-
-		response.data
-			? sendParentMsg(`added new task on ${new Date()}`)
-			: sendParentMsg(`send failed - ${response.data}`);
+		setState({ updateId: null, openModal: false });
 	};
 
 	const sendParentMsg = (msg) => {
 		props.dataFromChild(msg);
 	};
 
+	const emptyorundefined =
+		state.taskName === undefined ||
+		state.taskName === "" ||
+		state.projectName === undefined ||
+		state.projectName === "";
+
 	return (
 		<MuiThemeProvider theme={theme}>
-			<Button
-				color="primary"
-				variant="contained"
-				onClick={OpenModal}
-				style={{
-					marginTop: 25,
-					display: "block",
-					marginLeft: "auto",
-					marginRight: "auto",
-				}}
-			>
-				Add a new Task
-			</Button>
+			<Card style={{ padding: 20 }}>
+				<CardHeader
+					style={{ textAlign: "center" }}
+					title={
+						<Typography variant="h5" color="primary">
+							Product Backlog
+						</Typography>
+					}
+				/>
+				<CardContent style={{ height: 600, width: "100%" }}>
+					{!loadingT && <DataGrid rows={dataT.tasks} columns={columns} />}
+					<Button
+						color="primary"
+						variant="contained"
+						onClick={OpenModal}
+						style={{
+							marginTop: 25,
+							display: "block",
+							marginLeft: "auto",
+							marginRight: "auto",
+						}}
+					>
+						Add a new Task
+					</Button>
+				</CardContent>
+			</Card>
 			<Modal
 				open={state.openModal}
 				onClose={handleClose}
@@ -179,23 +294,22 @@ const CreateProject = (props) => {
 								style={{ textAlign: "center" }}
 								title={
 									<Typography variant="h5" color="primary">
-										Product Backlog
+										Input Task Information:
 									</Typography>
 								}
 							/>
 							<CardContent>
 								<FormControl>
-									<InputLabel style={{ width: 200 }}>Project</InputLabel>
+									<InputLabel>Project</InputLabel>
 									<NativeSelect
 										value={state.projectName}
 										onChange={handleProjectNameChange}
-										//input={<Input />}
-										//MenuProps={MenuProps}
 										inputProps={{
 											name: "projectName",
 											id: "projectName-native-simple",
 										}}
 									>
+										<option aria-label="None" value="" />
 										{data.projects.map((proj) => (
 											<option key={proj.id} value={proj.name}>
 												{proj.name}
@@ -227,12 +341,12 @@ const CreateProject = (props) => {
 									label="Relative Estimate"
 									fullWidth
 									type="number"
-									value={state.totalStoryPoint}
+									value={state.relativeEstimate}
 								/>
 								<Button
 									color="primary"
 									variant="contained"
-									onClick={onAddClicked}
+									onClick={onButtonClicked}
 									disabled={emptyorundefined}
 									style={{
 										marginTop: 25,
@@ -241,7 +355,7 @@ const CreateProject = (props) => {
 										marginRight: "auto",
 									}}
 								>
-									Create Task
+									{state.updateId === null ? "Create Task" : "Edit Task"}
 								</Button>
 							</CardContent>
 						</Card>
