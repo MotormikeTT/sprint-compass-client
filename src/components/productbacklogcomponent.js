@@ -63,15 +63,15 @@ const CreateProject = (props) => {
 
 	const UPDATE_TASK = gql`
 		mutation(
-			$id: ID
+			$_id: ID
 			$name: String
 			$description: String
 			$costestimate: Float
 			$relativeestimate: Float
 			$projectname: String
 		) {
-			edit(
-				id: $id
+			updatetask(
+				_id: $_id
 				name: $name
 				description: $description
 				costestimate: $costestimate
@@ -166,7 +166,7 @@ const CreateProject = (props) => {
 		if (state.updateId !== null) {
 			response = await updateTask({
 				variables: {
-					id: state.updateId,
+					_id: state.updateId,
 					name: state.taskName,
 					description: state.description,
 					costestimate: state.costEstimate === "" ? 0 : state.costEstimate,
