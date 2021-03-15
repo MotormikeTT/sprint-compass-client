@@ -90,10 +90,11 @@ const Home = () => {
     },
   ];
 
-  const { loading, error, data } = useQuery(GET_PROJECTS);
+  const { loading, error, data, refetch } = useQuery(GET_PROJECTS);
 
   const handleClose = () => {
     setState({ open: false });
+    refetch();
   };
 
   const onAddClicked = async () => {

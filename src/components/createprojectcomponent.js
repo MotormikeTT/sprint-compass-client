@@ -12,7 +12,7 @@ import {
 import DateFnsUtils from "@date-io/date-fns";
 import { MuiPickersUtilsProvider } from "@material-ui/pickers";
 import { KeyboardDatePicker } from "@material-ui/pickers";
-import { gql, useMutation } from "@apollo/client";
+import { gql, useMutation, useQuery } from "@apollo/client";
 
 const CreateProject = (props) => {
   const initialState = {
@@ -23,6 +23,7 @@ const CreateProject = (props) => {
     totalStoryPoint: "",
     totalCost: "",
     hourlyRate: "",
+    selectedProject: false,
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
@@ -59,7 +60,73 @@ const CreateProject = (props) => {
     }
   `;
 
+  const UPDATE_PROJECT = gql`
+    mutation(
+      $_id: ID
+      $name: String
+      $team: String
+      $startdate: String
+      $storypointconversion: Int
+      $totalstorypoints: Int
+      $totalcost: Float
+      $hourlyrate: Float
+    ) {
+      updateproject(
+        _id: $_id
+        name: $name
+        team: $team
+        startdate: $startdate
+        storypointconversion: $storypointconversion
+        totalstorypoints: $totalstorypoints
+        totalcost: $totalcost
+        hourlyrate: $hourlyrate
+      ) {
+        name
+        team
+        startdate
+        storypointconversion
+        totalstorypoints
+        totalcost
+        hourlyrate
+      }
+    }
+  `;
+
+  const GET_PROJECT = gql`
+    query($_id: ID) {
+      projectbyid(_id: $_id) {
+        id: _id
+        name
+        team
+        startdate
+        storypointconversion
+        totalstorypoints
+        totalcost
+        hourlyrate
+      }
+    }
+  `;
+
   const [addProject] = useMutation(ADD_PROJECT);
+
+  const [updateProject] = useMutation(UPDATE_PROJECT);
+
+  const { loading, error, data } = useQuery(GET_PROJECT, {
+    variables: { _id: props.updateId },
+  });
+
+  if (!loading && !error && !state.selectedProject) {
+    setState({
+      name: data.projectbyid.name,
+      teamName: data.projectbyid.team,
+      selectedDate: data.projectbyid.startdate,
+      storyPointConversion: data.projectbyid.storypointconversion,
+      totalStoryPoint: data.projectbyid.totalstorypoints,
+      totalCost: data.projectbyid.totalcost,
+      hourlyRate: data.projectbyid.hourlyrate,
+      selectedProject: true,
+    });
+  }
 
   const handleNameInput = (e) => {
     setState({ name: e.target.value });
@@ -106,35 +173,40 @@ const CreateProject = (props) => {
     state.hourlyRate === "";
 
   const onAddClicked = async () => {
-    let response = await addProject({
-      variables: {
-        name: state.name,
-        team: state.teamName,
-        startdate: state.selectedDate,
-        storypointconversion: state.storyPointConversion,
-        totalstorypoints: state.totalStoryPoint,
-        totalcost: state.totalCost,
-        hourlyrate: state.hourlyRate,
-      },
-    });
+    state.selectedProject
+      ? await updateProject({
+          variables: {
+            _id: props.updateId,
+            name: state.name,
+            team: state.teamName,
+            startdate: state.selectedDate,
+            storypointconversion: state.storyPointConversion,
+            totalstorypoints: state.totalStoryPoint,
+            totalcost: state.totalCost,
+            hourlyrate: state.hourlyRate,
+          },
+        })
+      : await addProject({
+          variables: {
+            name: state.name,
+            team: state.teamName,
+            startdate: state.selectedDate,
+            storypointconversion: state.storyPointConversion,
+            totalstorypoints: state.totalStoryPoint,
+            totalcost: state.totalCost,
+            hourlyrate: state.hourlyRate,
+          },
+        });
 
     setState({
       name: "",
-      team: "",
-      startdate: "",
-      storypointconversion: "",
-      totalstorypoints: "",
-      totalcost: "",
-      hourlyrate: "",
+      teamName: "",
+      selectedDate: null,
+      storyPointConversion: "",
+      totalStoryPoint: "",
+      totalCost: "",
+      hourlyRate: "",
     });
-
-    response.data
-      ? sendParentMsg(`added new project on ${new Date()}`)
-      : sendParentMsg(`send failed - ${response.data}`);
-  };
-
-  const sendParentMsg = (msg) => {
-    props.dataFromChild(msg);
   };
 
   return (
