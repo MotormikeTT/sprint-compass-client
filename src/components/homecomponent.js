@@ -98,7 +98,7 @@ const Home = () => {
   };
 
   const onAddClicked = async () => {
-    setState({ open: true });
+    setState({ open: true, updateId: "blank" });
   };
 
   return (

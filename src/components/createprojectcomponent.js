@@ -24,6 +24,8 @@ const CreateProject = (props) => {
     totalCost: "",
     hourlyRate: "",
     selectedProject: false,
+    refresh: false,
+    buttonText: "Create Project",
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
@@ -115,7 +117,7 @@ const CreateProject = (props) => {
     variables: { _id: props.updateId },
   });
 
-  if (!loading && !error && !state.selectedProject) {
+  if (!loading && !error && !state.selectedProject && props.updateId != null) {
     setState({
       name: data.projectbyid.name,
       teamName: data.projectbyid.team,
@@ -125,6 +127,19 @@ const CreateProject = (props) => {
       totalCost: data.projectbyid.totalcost,
       hourlyRate: data.projectbyid.hourlyrate,
       selectedProject: true,
+      buttonText: "Update Project",
+    });
+  } else if (props.updateId === "blank" && !state.refresh) {
+    setState({
+      name: "",
+      teamName: "",
+      selectedDate: null,
+      storyPointConversion: "",
+      totalStoryPoint: "",
+      totalCost: "",
+      hourlyRate: "",
+      refresh: true,
+      buttonText: "Create Project",
     });
   }
 
@@ -217,7 +232,7 @@ const CreateProject = (props) => {
             style={{ textAlign: "center" }}
             title={
               <Typography variant="h5" color="primary">
-                Create Project
+                {state.buttonText}
               </Typography>
             }
           />
@@ -287,7 +302,7 @@ const CreateProject = (props) => {
                 marginRight: "auto",
               }}
             >
-              Create Project
+              {state.buttonText}
             </Button>
           </CardContent>
         </Card>
