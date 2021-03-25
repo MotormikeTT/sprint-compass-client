@@ -11,11 +11,7 @@ import {
   CardContent,
   Modal,
 } from "@material-ui/core";
-import {
-  ContactSupportOutlined,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-} from "@material-ui/icons";
+import { Delete as DeleteIcon, Edit as EditIcon } from "@material-ui/icons";
 import { DataGrid } from "@material-ui/data-grid";
 
 import CreateProject from "./createprojectcomponent";

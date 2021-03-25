@@ -15,16 +15,18 @@ import {
   Grid,
   TextareaAutosize,
 } from "@material-ui/core";
-import DeleteIcon from "@material-ui/icons/Delete";
-import EditIcon from "@material-ui/icons/Edit";
-import AddIcon from "@material-ui/icons/Add";
+import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+} from "@material-ui/icons";
 import Modal from "@material-ui/core/Modal";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import Backdrop from "@material-ui/core/Backdrop";
 import Fade from "@material-ui/core/Fade";
 import { DataGrid } from "@material-ui/data-grid";
 
-const CreateProject = (props) => {
+const ProductBacklog = (props) => {
   const initialState = {
     projectName: "",
     taskName: "",
@@ -113,7 +115,20 @@ const CreateProject = (props) => {
       }
     }
   `;
-  const { data: dataT, error: errorT, loading: loadingT } = useQuery(GET_TASKS);
+  const {
+    data: dataT,
+    error: errorT,
+    loading: loadingT,
+    refetch: refetchTasks,
+  } = useQuery(GET_TASKS);
+
+  const DELETE_TASK = gql`
+    mutation($_id: ID) {
+      removetask(_id: $_id)
+    }
+  `;
+
+  const [deleteTask] = useMutation(DELETE_TASK);
 
   const GET_PROJECTS = gql`
     query {
@@ -195,6 +210,15 @@ const CreateProject = (props) => {
       }
     }
   `;
+
+  const DELETE_SUBTASK = gql`
+    mutation($_id: ID) {
+      removesubtask(_id: $_id)
+    }
+  `;
+
+  const [deleteSubtask] = useMutation(DELETE_SUBTASK);
+
   const [updateSubtask] = useMutation(UPDATE_SUBTASK);
 
   const columns = [
@@ -222,7 +246,7 @@ const CreateProject = (props) => {
       headerName: "Action",
       disableClickEventBubbling: true,
       renderCell: (params) => {
-        const onClick = () => {
+        const onClickUpdate = () => {
           setState({
             updateId: params.row.id,
             taskName: params.row.name,
@@ -233,11 +257,23 @@ const CreateProject = (props) => {
             openModal: true,
           });
         };
+        const onClickDelete = async () => {
+          let results = await deleteTask({
+            variables: { _id: params.row.id },
+          });
+          refetchTasks();
+          sendParentMsg(results.data.removeproject);
+        };
 
         return (
-          <IconButton onClick={onClick}>
-            <EditIcon fontSize="small" />
-          </IconButton>
+          <div>
+            <IconButton onClick={onClickUpdate}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton onClick={onClickDelete}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </div>
         );
       },
     },
@@ -380,6 +416,7 @@ const CreateProject = (props) => {
 
   const handleClose = () => {
     setState({ updateId: null, openModal: false });
+    refetchTasks();
   };
 
   const handleSubtaskClose = () => {
@@ -477,7 +514,10 @@ const CreateProject = (props) => {
                           !errorSubtask &&
                           dataSubtask.subtasksbytaskid.map((subtask) => (
                             <Typography
-                              style={{ marginLeft: 10, fontSize: 16 }}
+                              style={{
+                                marginLeft: 10,
+                                fontSize: 16,
+                              }}
                             >
                               {subtask.name}
                               <IconButton
@@ -496,9 +536,16 @@ const CreateProject = (props) => {
                               >
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              {/* <IconButton>
+                              <IconButton
+                                onClick={async () => {
+                                  await deleteSubtask({
+                                    variables: { _id: subtask.id },
+                                  });
+                                  refetchSubtasks();
+                                }}
+                              >
                                 <DeleteIcon fontSize="small" />
-                              </IconButton> */}
+                              </IconButton>
                             </Typography>
                           ))}
                         <TextField
@@ -662,4 +709,4 @@ const CreateProject = (props) => {
     </MuiThemeProvider>
   );
 };
-export default CreateProject;
+export default ProductBacklog;
