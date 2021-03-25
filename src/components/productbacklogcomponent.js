@@ -385,36 +385,40 @@ const CreateProject = (props) => {
 							<CardContent>
 								<div syles={{ flexGrow: 1 }}>
 									<Grid container spacing={3}>
-										<Grid item xs={6}>
-											<Typography
-												style={{ fontSize: "small", fontWeight: "bold" }}
-											>
-												Subtasks
-											</Typography>
-											{!loadingSubtask &&
-												!errorSubtask &&
-												dataSubtask.subtasksbytaskid.map((subtask) => (
-													<Typography style={{ marginLeft: 10, fontSize: 16 }}>
-														{subtask.name}
-													</Typography>
-												))}
-											<TextField
-												onChange={handleSubtaskInput}
-												label="create new subtask..."
-												fullWidth
-												value={state.subtaskName}
-												InputProps={{
-													endAdornment: (
-														<IconButton
-															disabled={state.subtaskName === ""}
-															onClick={onAddSubtaskClicked}
+										{state.updateId && (
+											<Grid item xs={6}>
+												<Typography
+													style={{ fontSize: "small", fontWeight: "bold" }}
+												>
+													Subtasks
+												</Typography>
+												{!loadingSubtask &&
+													!errorSubtask &&
+													dataSubtask.subtasksbytaskid.map((subtask) => (
+														<Typography
+															style={{ marginLeft: 10, fontSize: 16 }}
 														>
-															<AddIcon style={{ marginTop: -10 }} />
-														</IconButton>
-													),
-												}}
-											/>
-										</Grid>
+															{subtask.name}
+														</Typography>
+													))}
+												<TextField
+													onChange={handleSubtaskInput}
+													label="create new subtask..."
+													fullWidth
+													value={state.subtaskName}
+													InputProps={{
+														endAdornment: (
+															<IconButton
+																disabled={state.subtaskName === ""}
+																onClick={onAddSubtaskClicked}
+															>
+																<AddIcon style={{ marginTop: -10 }} />
+															</IconButton>
+														),
+													}}
+												/>
+											</Grid>
+										)}
 										<Grid item xs={6}>
 											<FormControl>
 												<InputLabel>Project</InputLabel>
