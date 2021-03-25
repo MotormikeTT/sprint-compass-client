@@ -1,7 +1,7 @@
 import React, { useReducer } from "react";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 import theme from "../theme";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useMutation } from "@apollo/client";
 import {
   Typography,
   IconButton,
@@ -11,8 +11,13 @@ import {
   CardContent,
   Modal,
 } from "@material-ui/core";
-import EditIcon from "@material-ui/icons/Edit";
+import {
+  ContactSupportOutlined,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+} from "@material-ui/icons";
 import { DataGrid } from "@material-ui/data-grid";
+
 import CreateProject from "./createprojectcomponent";
 
 const Home = () => {
@@ -31,6 +36,12 @@ const Home = () => {
     }
   `;
 
+  const DELETE_PROJECT = gql`
+    mutation($_id: ID) {
+      removeproject(_id: $_id)
+    }
+  `;
+
   const initialState = {
     updateId: null,
     open: false,
@@ -40,9 +51,18 @@ const Home = () => {
 
   const [state, setState] = useReducer(reducer, initialState);
 
+  const { loading, error, data, refetch } = useQuery(GET_PROJECTS);
+
+  const [deleteProject] = useMutation(DELETE_PROJECT);
+
+  const handleClose = () => {
+    setState({ open: false });
+    refetch();
+  };
+
   const columns = [
-    { field: "name", headerName: "Project name", width: 200 },
-    { field: "team", headerName: "Team name", width: 200 },
+    { field: "name", headerName: "Project name", width: 220 },
+    { field: "team", headerName: "Team name", width: 220 },
     {
       field: "startdate",
       headerName: "Start Date",
@@ -74,28 +94,36 @@ const Home = () => {
     },
     {
       field: "",
-      headerName: "Action",
+      headerName: "",
+      sortable: false,
       disableClickEventBubbling: true,
+      width: 120,
       renderCell: (params) => {
-        const onClick = () => {
+        const onClickUpdate = () => {
           setState({ updateId: params.row.id, open: true });
         };
 
+        const onClickDelete = async () => {
+          let results = await deleteProject({
+            variables: { _id: params.row.id },
+          });
+          refetch();
+          console.log(results.data.removeproject); // TO DO: Output the message to snackbar
+        };
+
         return (
-          <IconButton onClick={onClick}>
-            <EditIcon fontSize="small" />
-          </IconButton>
+          <div>
+            <IconButton onClick={onClickUpdate}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton onClick={onClickDelete}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </div>
         );
       },
     },
   ];
-
-  const { loading, error, data, refetch } = useQuery(GET_PROJECTS);
-
-  const handleClose = () => {
-    setState({ open: false });
-    refetch();
-  };
 
   const onAddClicked = async () => {
     setState({ open: true, updateId: "blank" });
@@ -113,15 +141,16 @@ const Home = () => {
               </Typography>
             }
           />
-          <CardContent style={{ height: 600, width: "100%" }}>
-            <DataGrid rows={data.projects} columns={columns} />
-
+          <CardContent style={{ height: 600 }}>
+            <div style={{ height: "95%" }}>
+              <DataGrid rows={data.projects} columns={columns} />
+            </div>
             <Button
               color="primary"
               variant="contained"
               onClick={onAddClicked}
               style={{
-                marginTop: 5,
+                marginTop: 15,
                 display: "block",
                 marginLeft: "auto",
                 marginRight: "auto",
