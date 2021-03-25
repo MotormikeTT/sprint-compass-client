@@ -12,8 +12,11 @@ import {
 	InputLabel,
 	NativeSelect,
 	IconButton,
+	Grid,
+	TextareaAutosize,
 } from "@material-ui/core";
 import EditIcon from "@material-ui/icons/Edit";
+import AddIcon from "@material-ui/icons/Add";
 import Modal from "@material-ui/core/Modal";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import Backdrop from "@material-ui/core/Backdrop";
@@ -27,6 +30,12 @@ const CreateProject = (props) => {
 		description: "",
 		costEstimate: "",
 		relativeEstimate: "",
+
+		subtaskName: "",
+		subtaskDescription: "",
+		subtaskHoursWorked: "",
+		subtaskRelativeEstimate: "",
+
 		projects: [],
 		openModal: false,
 		updateId: null,
@@ -58,7 +67,6 @@ const CreateProject = (props) => {
 			}
 		}
 	`;
-
 	const [addTask] = useMutation(ADD_TASK);
 
 	const UPDATE_TASK = gql`
@@ -86,19 +94,7 @@ const CreateProject = (props) => {
 			}
 		}
 	`;
-
 	const [updateTask] = useMutation(UPDATE_TASK);
-
-	const GET_PROJECTS = gql`
-		query {
-			projects {
-				id: _id
-				name
-			}
-		}
-	`;
-
-	const { loading, error, data } = useQuery(GET_PROJECTS);
 
 	const GET_TASKS = gql`
 		query {
@@ -112,8 +108,61 @@ const CreateProject = (props) => {
 			}
 		}
 	`;
-
 	const { data: dataT, error: errorT, loading: loadingT } = useQuery(GET_TASKS);
+
+	const GET_PROJECTS = gql`
+		query {
+			projects {
+				id: _id
+				name
+			}
+		}
+	`;
+	const { loading, error, data } = useQuery(GET_PROJECTS);
+
+	const GET_SUBTASKS = gql`
+		query($_id: ID) {
+			subtasksbytaskid(taskid: $_id) {
+				name
+				description
+				hoursworked
+				relativeestimate
+			}
+		}
+	`;
+	const {
+		data: dataSubtask,
+		error: errorSubtask,
+		loading: loadingSubtask,
+		refetch: refetchSubtasks,
+	} = useQuery(GET_SUBTASKS, {
+		variables: { _id: state.updateId },
+	});
+
+	const ADD_SUBTASK = gql`
+		mutation(
+			$name: String
+			$description: String
+			$hoursworked: Float
+			$relativeestimate: Float
+			$taskid: ID
+		) {
+			addsubtask(
+				name: $name
+				description: $description
+				hoursworked: $hoursworked
+				relativeestimate: $relativeestimate
+				taskid: $taskid
+			) {
+				name
+				description
+				hoursworked
+				relativeestimate
+				taskid
+			}
+		}
+	`;
+	const [addSubtask] = useMutation(ADD_SUBTASK);
 
 	const columns = [
 		{ field: "projectname", headerName: "Project", width: 200 },
@@ -161,7 +210,7 @@ const CreateProject = (props) => {
 		},
 	];
 
-	const onButtonClicked = async () => {
+	const onTaskButtonClicked = async () => {
 		let response;
 		if (state.updateId !== null) {
 			response = await updateTask({
@@ -194,15 +243,45 @@ const CreateProject = (props) => {
 			response.data
 				? sendParentMsg(`added new task on ${new Date()}`)
 				: sendParentMsg(`send failed - ${response.data}`);
+
+			setState({
+				taskName: "",
+				description: "",
+				costEstimate: "",
+				relativeEstimate: "",
+				projectName: "",
+			});
 		}
+	};
+
+	const onAddSubtaskClicked = async () => {
+		let response = await addSubtask({
+			variables: {
+				name: state.subtaskName,
+				description: state.subtaskDescription,
+				hoursworked:
+					state.subtaskHoursWorked === "" ? 0 : state.subtaskHoursWorked,
+				relativeestimate:
+					state.subtaskRelativeEstimate === ""
+						? 0
+						: state.subtaskRelativeEstimate,
+				taskid: state.updateId,
+			},
+		});
+
+		response.data
+			? sendParentMsg(`added new subtask on ${new Date()}`)
+			: sendParentMsg(`send failed - ${response.data}`);
 
 		setState({
-			taskName: "",
-			description: "",
-			costEstimate: "",
-			relativeEstimate: "",
-			projectName: "",
+			subtaskName: "",
 		});
+
+		refetchSubtasks();
+	};
+
+	const handleSubtaskInput = (e) => {
+		setState({ subtaskName: e.target.value });
 	};
 
 	const handleNameInput = (e) => {
@@ -255,13 +334,15 @@ const CreateProject = (props) => {
 					}
 				/>
 				<CardContent style={{ height: 600, width: "100%" }}>
-					{!loadingT && <DataGrid rows={dataT.tasks} columns={columns} />}
+					{!loadingT && !errorT && (
+						<DataGrid rows={dataT.tasks} columns={columns} />
+					)}
 					<Button
 						color="primary"
 						variant="contained"
 						onClick={OpenModal}
 						style={{
-							marginTop: 25,
+							marginTop: 5,
 							display: "block",
 							marginLeft: "auto",
 							marginRight: "auto",
@@ -287,66 +368,100 @@ const CreateProject = (props) => {
 					timeout: 500,
 				}}
 			>
-				{!loading && (
+				{!loading && !error && (
 					<Fade in={state.openModal}>
 						<Card>
 							<CardHeader
 								style={{ textAlign: "center" }}
 								title={
-									<Typography variant="h5" color="primary">
-										Input Task Information:
-									</Typography>
+									<TextField
+										onChange={handleNameInput}
+										label="Name"
+										fullWidth
+										value={state.taskName}
+									/>
 								}
 							/>
 							<CardContent>
-								<FormControl>
-									<InputLabel>Project</InputLabel>
-									<NativeSelect
-										value={state.projectName}
-										onChange={handleProjectNameChange}
-										inputProps={{
-											name: "projectName",
-											id: "projectName-native-simple",
-										}}
-									>
-										<option aria-label="None" value="" />
-										{data.projects.map((proj) => (
-											<option key={proj.id} value={proj.name}>
-												{proj.name}
-											</option>
-										))}
-									</NativeSelect>
-								</FormControl>
-								<TextField
-									onChange={handleNameInput}
-									label="Name"
-									fullWidth
-									value={state.taskName}
-								/>
-								<TextField
-									onChange={handleDescriptionInput}
-									label="Description"
-									fullWidth
-									value={state.description}
-								/>
-								<TextField
-									onChange={handleCostEstimateInput}
-									label="Cost Estimate"
-									fullWidth
-									type="number"
-									value={state.costEstimate}
-								/>
-								<TextField
-									onChange={handleRelativeEstimatePointInput}
-									label="Relative Estimate"
-									fullWidth
-									type="number"
-									value={state.relativeEstimate}
-								/>
+								<div syles={{ flexGrow: 1 }}>
+									<Grid container spacing={3}>
+										<Grid item xs={6}>
+											<Typography
+												style={{ fontSize: "small", fontWeight: "bold" }}
+											>
+												Subtasks
+											</Typography>
+											{!loadingSubtask &&
+												!errorSubtask &&
+												dataSubtask.subtasksbytaskid.map((subtask) => (
+													<Typography style={{ marginLeft: 10, fontSize: 16 }}>
+														{subtask.name}
+													</Typography>
+												))}
+											<TextField
+												onChange={handleSubtaskInput}
+												label="create new subtask..."
+												fullWidth
+												value={state.subtaskName}
+												InputProps={{
+													endAdornment: (
+														<IconButton
+															disabled={state.subtaskName === ""}
+															onClick={onAddSubtaskClicked}
+														>
+															<AddIcon style={{ marginTop: -10 }} />
+														</IconButton>
+													),
+												}}
+											/>
+										</Grid>
+										<Grid item xs={6}>
+											<FormControl>
+												<InputLabel>Project</InputLabel>
+												<NativeSelect
+													value={state.projectName}
+													onChange={handleProjectNameChange}
+													inputProps={{
+														name: "projectName",
+														id: "projectName-native-simple",
+													}}
+												>
+													<option aria-label="None" value="" />
+													{data.projects.map((proj) => (
+														<option key={proj.id} value={proj.name}>
+															{proj.name}
+														</option>
+													))}
+												</NativeSelect>
+											</FormControl>
+											<TextField
+												onChange={handleDescriptionInput}
+												label="Description"
+												fullWidth
+												value={state.description}
+											/>
+											<TextField
+												onChange={handleCostEstimateInput}
+												label="Cost Estimate"
+												fullWidth
+												type="number"
+												value={state.costEstimate}
+											/>
+											<TextField
+												onChange={handleRelativeEstimatePointInput}
+												label="Relative Estimate"
+												fullWidth
+												type="number"
+												value={state.relativeEstimate}
+											/>{" "}
+										</Grid>
+									</Grid>
+								</div>
+
 								<Button
 									color="primary"
 									variant="contained"
-									onClick={onButtonClicked}
+									onClick={onTaskButtonClicked}
 									disabled={emptyorundefined}
 									style={{
 										marginTop: 25,
