@@ -8,11 +8,25 @@ import {
   Typography,
   TextField,
   Button,
+  IconButton,
+  Grid,
+  Fade,
+  Backdrop,
 } from "@material-ui/core";
+import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+} from "@material-ui/icons";
+import Modal from "@material-ui/core/Modal";
 import DateFnsUtils from "@date-io/date-fns";
-import { MuiPickersUtilsProvider } from "@material-ui/pickers";
-import { KeyboardDatePicker } from "@material-ui/pickers";
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker,
+} from "@material-ui/pickers";
 import { gql, useMutation, useQuery } from "@apollo/client";
+
+import Team from "./teamcomponent";
 
 const CreateProject = (props) => {
   const initialState = {
@@ -26,6 +40,10 @@ const CreateProject = (props) => {
     selectedProject: false,
     refresh: false,
     buttonText: "Create Project",
+
+    team: {},
+
+    openTeamModal: false,
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
@@ -109,6 +127,41 @@ const CreateProject = (props) => {
     variables: { _id: props.updateId },
   });
 
+  const GET_TEAM = gql`
+    query($_id: ID) {
+      teambyprojectid(projectid: $_id) {
+        id: _id
+        name
+      }
+    }
+  `;
+  const {
+    data: dataTeam,
+    error: errorTeam,
+    loading: loadingTeam,
+    refetch: refetchTeam,
+  } = useQuery(GET_TEAM, {
+    variables: { _id: props.updateId },
+  });
+
+  const ADD_TEAM = gql`
+    mutation($name: String, $projectid: ID) {
+      addteam(name: $name, projectid: $projectid) {
+        name
+        projectid
+      }
+    }
+  `;
+  const [addTeam] = useMutation(ADD_TEAM);
+
+  const DELETE_TEAM = gql`
+    mutation($_id: ID) {
+      removeteam(_id: $_id)
+    }
+  `;
+
+  const [deleteTeam] = useMutation(DELETE_TEAM);
+
   if (!loading && !error && !state.selectedProject && props.updateId != null) {
     setState({
       name: data.projectbyid.name,
@@ -121,6 +174,7 @@ const CreateProject = (props) => {
       selectedProject: true,
       buttonText: "Update Project",
     });
+    refetchTeam();
   } else if (props.updateId === "blank" && !state.refresh) {
     setState({
       name: "",
@@ -161,6 +215,19 @@ const CreateProject = (props) => {
 
   const handleHourlyRateInput = (e) => {
     setState({ hourlyRate: parseFloat(e.target.value) });
+  };
+
+  const handleNewTeamMemberNameInput = (e) => {
+    setState({ team: { newTeamMemberName: e.target.value } });
+  };
+
+  const handleTeamClose = () => {
+    setState({
+      teamId: null,
+      openTeamModal: false,
+      teamMemberName: "",
+    });
+    refetchTeam();
   };
 
   const emptyorundefined =
@@ -220,8 +287,36 @@ const CreateProject = (props) => {
       : sendParentMsg(results.data.updateproject);
   };
 
+  const onTeamButtonClicked = async () => {
+    let response = await addTeam({
+      variables: {
+        name: state.team.newTeamMemberName,
+        projectid: props.updateId,
+      },
+    });
+
+    response.data
+      ? sendParentMsg(`added new team member on ${new Date()}`)
+      : sendParentMsg(`send failed - ${response.data}`);
+
+    setState({
+      openTeamModal: false,
+      team: {
+        teamId: null,
+        newTeamMemberName: "",
+        teamMemberName: "",
+      },
+    });
+    refetchTeam();
+  };
+
   const sendParentMsg = (msg) => {
     props.dataFromChild(msg);
+  };
+
+  const msgFromChild = (msg) => {
+    sendParentMsg(msg);
+    handleTeamClose();
   };
 
   return (
@@ -304,8 +399,89 @@ const CreateProject = (props) => {
             >
               {state.buttonText}
             </Button>
+            <br />
+            <div styles={{ flexGrow: 1 }}>
+              <Grid container spacing={3}>
+                {props.updateId && state.teamName && (
+                  <Grid item xs={6}>
+                    <Typography variant="h5" color="primary">
+                      Team: {state.teamName}
+                    </Typography>
+                    {!loadingTeam &&
+                      !errorTeam &&
+                      dataTeam.teambyprojectid.map((team) => (
+                        <Typography style={{ marginLeft: 10, fontSize: 16 }}>
+                          {team.name}
+                          <IconButton
+                            onClick={() => {
+                              setState({
+                                team: {
+                                  teamId: team.id,
+                                  teamMemberName: team.name,
+                                  projectid: props.updateId,
+                                },
+                                openTeamModal: true,
+                              });
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            onClick={async () => {
+                              await deleteTeam({
+                                variables: { _id: team.id },
+                              });
+                              refetchTeam();
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Typography>
+                      ))}
+                    <TextField
+                      onChange={handleNewTeamMemberNameInput}
+                      label="add a new team member..."
+                      fullWidth
+                      value={state.team.newTeamMemberName}
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton
+                            disabled={state.team.newTeamMemberName === ""}
+                            onClick={onTeamButtonClicked}
+                          >
+                            <AddIcon style={{ marginTop: -10 }} />
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                )}
+              </Grid>
+            </div>
           </CardContent>
         </Card>
+        <Modal
+          open={state.openTeamModal}
+          onClose={handleTeamClose}
+          aria-labelledby="modal-title"
+          aria-describedby="modal-description"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          closeAfterTransition
+          BackdropComponent={Backdrop}
+          BackdropProps={{
+            timeout: 500,
+          }}
+        >
+          {!loading && !error && (
+            <Fade in={state.openTeamModal}>
+              <Team team={state.team} dataFromChild={msgFromChild} />
+            </Fade>
+          )}
+        </Modal>
       </MuiPickersUtilsProvider>
     </MuiThemeProvider>
   );

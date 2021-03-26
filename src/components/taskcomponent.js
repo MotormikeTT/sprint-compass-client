@@ -154,6 +154,10 @@ const Task = (props) => {
 
   const [deleteSubtask] = useMutation(DELETE_SUBTASK);
 
+  if (!loadingSubtask && !errorSubtask && state.updateId) {
+    refetchSubtasks();
+  }
+
   const onTaskButtonClicked = async () => {
     let response;
     if (state.updateId !== null) {
@@ -168,7 +172,6 @@ const Task = (props) => {
           projectname: state.projectName,
         },
       });
-
       response.data
         ? sendParentMsg(`updated task on ${new Date()}`)
         : sendParentMsg(`send failed - ${response.data}`);
@@ -183,7 +186,6 @@ const Task = (props) => {
           projectname: state.projectName,
         },
       });
-
       response.data
         ? sendParentMsg(`added new task on ${new Date()}`)
         : sendParentMsg(`send failed - ${response.data}`);
@@ -259,12 +261,15 @@ const Task = (props) => {
 
   const handleSubtaskClose = () => {
     setState({
-      subtaskId: null,
+      subtask: {
+        subtaskId: null,
+        newSubtaskName: "",
+        subtaskName: "",
+        subtaskDescription: "",
+        subtaskHoursWorked: "",
+        subtaskRelativeEstimate: "",
+      },
       openSubtaskModal: false,
-      subtaskName: "",
-      subtaskDescription: "",
-      subtaskHoursWorked: "",
-      subtaskRelativeEstimate: "",
     });
     refetchSubtasks();
   };
@@ -275,7 +280,6 @@ const Task = (props) => {
 
   const msgFromChild = (msg) => {
     sendParentMsg(msg);
-    handleSubtaskClose();
   };
 
   const emptyorundefined =

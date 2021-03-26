@@ -93,6 +93,7 @@ const ProductBacklog = (props) => {
             },
             openModal: true,
           });
+          refetchTasks();
         };
         const onClickDelete = async () => {
           let results = await deleteTask({
