@@ -82,15 +82,7 @@ const CreateProject = (props) => {
         totalstorypoints: $totalstorypoints
         totalcost: $totalcost
         hourlyrate: $hourlyrate
-      ) {
-        name
-        team
-        startdate
-        storypointconversion
-        totalstorypoints
-        totalcost
-        hourlyrate
-      }
+      )
     }
   `;
 
@@ -188,8 +180,9 @@ const CreateProject = (props) => {
     state.hourlyRate === "";
 
   const onAddClicked = async () => {
+    let results = null;
     state.selectedProject
-      ? await updateProject({
+      ? (results = await updateProject({
           variables: {
             _id: props.updateId,
             name: state.name,
@@ -200,8 +193,8 @@ const CreateProject = (props) => {
             totalcost: state.totalCost,
             hourlyrate: state.hourlyRate,
           },
-        })
-      : await addProject({
+        }))
+      : (results = await addProject({
           variables: {
             name: state.name,
             team: state.teamName,
@@ -211,7 +204,7 @@ const CreateProject = (props) => {
             totalcost: state.totalCost,
             hourlyrate: state.hourlyRate,
           },
-        });
+        }));
 
     setState({
       name: "",
@@ -222,6 +215,13 @@ const CreateProject = (props) => {
       totalCost: "",
       hourlyRate: "",
     });
+    results.data.addproject != null
+      ? sendParentMsg("added new project successfully!")
+      : sendParentMsg(results.data.updateproject);
+  };
+
+  const sendParentMsg = (msg) => {
+    props.dataFromChild(msg);
   };
 
   return (

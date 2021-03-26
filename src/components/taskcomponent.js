@@ -38,7 +38,6 @@ const Task = (props) => {
     subtask: {},
 
     projects: [],
-    openModal: false,
 
     openSubtaskModal: false,
   };
@@ -170,9 +169,9 @@ const Task = (props) => {
         },
       });
 
-      //   response.data
-      //     ? sendParentMsg(`updated task on ${new Date()}`)
-      //     : sendParentMsg(`send failed - ${response.data}`);
+      response.data
+        ? sendParentMsg(`updated task on ${new Date()}`)
+        : sendParentMsg(`send failed - ${response.data}`);
     } else {
       response = await addTask({
         variables: {
@@ -185,9 +184,9 @@ const Task = (props) => {
         },
       });
 
-      //   response.data
-      //     ? sendParentMsg(`added new task on ${new Date()}`)
-      //     : sendParentMsg(`send failed - ${response.data}`);
+      response.data
+        ? sendParentMsg(`added new task on ${new Date()}`)
+        : sendParentMsg(`send failed - ${response.data}`);
 
       setState({
         taskName: "",
@@ -216,9 +215,9 @@ const Task = (props) => {
       },
     });
 
-    //   response.data
-    //     ? sendParentMsg(`added new subtask on ${new Date()}`)
-    //     : sendParentMsg(`send failed - ${response.data}`);
+    response.data
+      ? sendParentMsg(`added new subtask on ${new Date()}`)
+      : sendParentMsg(`send failed - ${response.data}`);
 
     setState({
       openSubtaskModal: false,
@@ -267,11 +266,17 @@ const Task = (props) => {
       subtaskHoursWorked: "",
       subtaskRelativeEstimate: "",
     });
+    refetchSubtasks();
   };
 
-  //   const sendParentMsg = (msg) => {
-  //     props.dataFromChild(msg);
-  //   };
+  const sendParentMsg = (msg) => {
+    props.dataFromChild(msg);
+  };
+
+  const msgFromChild = (msg) => {
+    sendParentMsg(msg);
+    handleSubtaskClose();
+  };
 
   const emptyorundefined =
     state.taskName === undefined ||
@@ -437,7 +442,7 @@ const Task = (props) => {
       >
         {!loading && !error && (
           <Fade in={state.openSubtaskModal}>
-            <Subtask subtask={state.subtask} />
+            <Subtask subtask={state.subtask} dataFromChild={msgFromChild} />
           </Fade>
         )}
       </Modal>

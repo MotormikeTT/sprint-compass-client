@@ -125,6 +125,11 @@ const ProductBacklog = (props) => {
     refetchTasks();
   };
 
+  const msgFromChild = (msg) => {
+    sendParentMsg(msg);
+    handleClose();
+  };
+
   const sendParentMsg = (msg) => {
     props.dataFromChild(msg);
   };
@@ -175,7 +180,7 @@ const ProductBacklog = (props) => {
           timeout: 500,
         }}
       >
-        <Task task={state.task} />
+        <Task task={state.task} dataFromChild={msgFromChild} />
       </Modal>
     </MuiThemeProvider>
   );

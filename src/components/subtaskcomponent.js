@@ -20,11 +20,6 @@ const Subtask = (props) => {
     subtaskHoursWorked: props.subtask.subtaskHoursWorked || 0,
     subtaskRelativeEstimate: props.subtask.subtaskRelativeEstimate || 0,
     taskId: props.subtask.taskid || "",
-
-    projects: [],
-    openModal: false,
-
-    openSubtaskModal: false,
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
@@ -64,9 +59,9 @@ const Subtask = (props) => {
       },
     });
 
-    //   response.data
-    //     ? sendParentMsg(`added new subtask on ${new Date()}`)
-    //     : sendParentMsg(`send failed - ${response.data}`);
+    response.data
+      ? sendParentMsg(`updated subtask on ${new Date()}`)
+      : sendParentMsg(`send failed - ${response.data}`);
   };
 
   const handleSubtaskNameInput = (e) => {
@@ -85,9 +80,9 @@ const Subtask = (props) => {
     setState({ subtaskRelativeEstimate: parseFloat(e.target.value) });
   };
 
-  //   const sendParentMsg = (msg) => {
-  //     props.dataFromChild(msg);
-  //   };
+  const sendParentMsg = (msg) => {
+    props.dataFromChild(msg);
+  };
 
   return (
     <MuiThemeProvider theme={theme}>

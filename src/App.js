@@ -98,7 +98,10 @@ const App = () => {
             <ListAdvisoriesComponent dataFromChild={msgFromChild} />
           )}
         /> */}
-        <Route path="/home" component={Home} />
+        <Route
+          path="/home"
+          render={() => <Home dataFromChild={msgFromChild} />}
+        />
       </div>
       <Snackbar
         open={state.gotData}

@@ -16,7 +16,7 @@ import { DataGrid } from "@material-ui/data-grid";
 
 import CreateProject from "./createprojectcomponent";
 
-const Home = () => {
+const Home = (props) => {
   const GET_PROJECTS = gql`
     query {
       projects {
@@ -125,6 +125,15 @@ const Home = () => {
     setState({ open: true, updateId: "blank" });
   };
 
+  const msgFromChild = (msg) => {
+    sendParentMsg(msg);
+    handleClose();
+  };
+
+  const sendParentMsg = (msg) => {
+    props.dataFromChild(msg);
+  };
+
   return (
     <MuiThemeProvider theme={theme}>
       {!loading && (
@@ -159,7 +168,10 @@ const Home = () => {
               open={state.open}
               onClose={handleClose}
             >
-              <CreateProject updateId={state.updateId} />
+              <CreateProject
+                updateId={state.updateId}
+                dataFromChild={msgFromChild}
+              />
             </Modal>
           </CardContent>
         </Card>
