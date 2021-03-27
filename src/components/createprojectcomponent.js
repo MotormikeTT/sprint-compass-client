@@ -443,10 +443,20 @@ const CreateProject = (props) => {
                       label="add a new team member..."
                       fullWidth
                       value={state.team.newTeamMemberName}
+                      onKeyPress={(ev) => {
+                        if (ev.key === "Enter") {
+                          // Do code here
+                          onTeamButtonClicked();
+                          ev.preventDefault();
+                        }
+                      }}
                       InputProps={{
                         endAdornment: (
                           <IconButton
-                            disabled={state.team.newTeamMemberName === ""}
+                            disabled={
+                              state.team.newTeamMemberName === "" ||
+                              state.team.newTeamMemberName == null
+                            }
                             onClick={onTeamButtonClicked}
                           >
                             <AddIcon style={{ marginTop: -10 }} />

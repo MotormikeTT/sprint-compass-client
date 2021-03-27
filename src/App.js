@@ -17,6 +17,7 @@ import Home from "./components/homecomponent";
 import CreateProject from "./components/createprojectcomponent";
 import ProductBacklog from "./components/productbacklogcomponent";
 import Timecard from "./components/timecardcomponent";
+import CreateReport from "./components/createreportcomponent";
 
 const App = () => {
   const initialState = {
@@ -70,6 +71,9 @@ const App = () => {
             <MenuItem component={Link} to="/timecard" onClick={handleClose}>
               Timecard
             </MenuItem>
+            <MenuItem component={Link} to="/report" onClick={handleClose}>
+              Create Report
+            </MenuItem>
           </Menu>
           <Typography></Typography>
         </Toolbar>
@@ -88,16 +92,10 @@ const App = () => {
           path="/timecard"
           render={() => <Timecard dataFromChild={msgFromChild} />}
         />
-        {/* <Route
-          path="/add"
-          render={() => <AdvisoryAddComponent dataFromChild={msgFromChild} />}
-        />
         <Route
-          path="/list"
-          render={() => (
-            <ListAdvisoriesComponent dataFromChild={msgFromChild} />
-          )}
-        /> */}
+          path="/report"
+          render={() => <CreateReport dataFromChild={msgFromChild} />}
+        />
         <Route
           path="/home"
           render={() => <Home dataFromChild={msgFromChild} />}

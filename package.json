@@ -15,11 +15,13 @@
     "@testing-library/user-event": "^12.1.10",
     "date-fns": "^2.19.0",
     "graphql": "^15.5.0",
+    "jspdf": "^2.3.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^4.0.2",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "xlsx": "^0.16.9"
   },
   "scripts": {
     "start": "react-scripts start",
