@@ -17,6 +17,8 @@ import {
   Print as PrintIcon,
 } from "@material-ui/icons";
 import { DataGrid } from "@material-ui/data-grid";
+import { jsPDF } from "jspdf";
+import XLSX from "xlsx";
 
 import theme from "../theme";
 
@@ -72,14 +74,24 @@ const CreateReport = (props) => {
   const rows = [];
 
   const onPrintClicked = async () => {
+    window.print();
     sendParentMsg("report generated as a Print");
   };
 
   const onExcelClicked = async () => {
+    const ws = XLSX.utils.json_to_sheet(data.projects);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "SheetJS");
+    /* generate XLSX file and send to client */
+    XLSX.writeFile(wb, "sheetjs.xlsx");
     sendParentMsg("report generated as Excel Spreadsheet");
   };
 
   const onPDFClicked = async () => {
+    const doc = new jsPDF();
+
+    doc.text("Hello world!", 10, 10);
+    doc.save("a4.pdf");
     sendParentMsg("report generated as PDF");
   };
 
