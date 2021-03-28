@@ -8,6 +8,10 @@ import {
 	Typography,
 	Button,
 	IconButton,
+	FormControl,
+	InputLabel,
+	Select,
+	MenuItem,
 } from "@material-ui/core";
 import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
 import { Delete as DeleteIcon, Edit as EditIcon } from "@material-ui/icons";
@@ -103,6 +107,15 @@ const ProductBacklog = (props) => {
 		variables: { num: parseInt(state.displaySelection.slice(-1)) },
 	});
 
+	const MOVETASKTOSPRINT = gql`
+		mutation($num: Int, $taskid: ID) {
+			movetasktosprint(num: $num, taskid: $taskid) {
+				num
+			}
+		}
+	`;
+	const [moveTaskToSprint] = useMutation(MOVETASKTOSPRINT);
+
 	const columns = [
 		{ field: "projectname", headerName: "Project", width: 200 },
 		{ field: "name", headerName: "Name", width: 500 },
@@ -129,7 +142,7 @@ const ProductBacklog = (props) => {
 			sortable: false,
 			disableClickEventBubbling: true,
 			disableColumnMenu: true,
-			width: 120,
+			width: 210,
 			renderCell: (params) => {
 				const onClickUpdate = () => {
 					setState({
@@ -152,6 +165,16 @@ const ProductBacklog = (props) => {
 					refetchTasks();
 					sendParentMsg(results.data.removeproject);
 				};
+				const handleSprintChange = async (e) => {
+					let results = await moveTaskToSprint({
+						variables: {
+							num: parseInt(e.target.value.slice(-1)),
+							taskid: params.row.id,
+						},
+					});
+					refetchTasks();
+					sendParentMsg("Moved to " + e.target.value);
+				};
 
 				return (
 					<div>
@@ -161,6 +184,28 @@ const ProductBacklog = (props) => {
 						<IconButton onClick={onClickDelete}>
 							<DeleteIcon fontSize="small" />
 						</IconButton>
+						<FormControl>
+							<InputLabel>Sprint</InputLabel>
+							<Select
+								onChange={handleSprintChange}
+								label="Sprint"
+								style={{ width: "10vh" }}
+							>
+								<MenuItem value="">
+									<em>Backlog</em>
+								</MenuItem>
+								{!loadingS &&
+									!errorS &&
+									dataS.sprints.map((sprint) => {
+										let sprintDisplayVal = `Sprint ${sprint}`;
+										return (
+											<MenuItem value={sprintDisplayVal}>
+												<em>{sprintDisplayVal}</em>
+											</MenuItem>
+										);
+									})}
+							</Select>
+						</FormControl>
 					</div>
 				);
 			},
@@ -185,12 +230,12 @@ const ProductBacklog = (props) => {
 		props.dataFromChild(msg);
 	};
 
-	const handleButtonGroupSelection = (e, selection) => {
+	const handleButtonGroupSelection = async (e, selection) => {
 		if (selection === "Add") {
 			//get the last sprint number
 			let sprintNum = 1;
 			if (!loadingS && !errorS) sprintNum += dataS.sprints.length;
-			addSprint({
+			await addSprint({
 				variables: {
 					num: parseInt(sprintNum),
 				},
@@ -203,9 +248,9 @@ const ProductBacklog = (props) => {
 				if (!loadingT && !errorT) setState({ sprintTasks: dataT.tasks });
 			} else {
 				if (!loadingSprintTasks && !errorSprintTasks) {
-					refetchTasks();
+					refetchSprintTasks();
 					setState({ sprintTasks: dataSprintTasks.tasksinsprint });
-					console.log(state.sprintTasks);
+					console.log(dataSprintTasks.tasksinsprint);
 				}
 			}
 		}
@@ -259,7 +304,7 @@ const ProductBacklog = (props) => {
 							rows={dataT.tasks}
 							columns={columns}
 							autoHeight="true"
-							pageSize="8"
+							pageSize={8}
 						/>
 					)}
 					{state.displaySelection !== "Backlog" && (

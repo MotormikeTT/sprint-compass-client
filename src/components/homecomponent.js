@@ -152,7 +152,7 @@ const Home = (props) => {
 							rows={data.projects}
 							columns={columns}
 							autoHeight="true"
-							pageSize="8"
+							pageSize={8}
 						/>
 						<Button
 							color="primary"
