@@ -198,6 +198,7 @@ const Task = (props) => {
 				projectName: "",
 			});
 		}
+		props.refetchTasks();
 	};
 
 	const onSubtaskButtonClicked = async () => {

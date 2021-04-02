@@ -12,6 +12,7 @@ import {
 	InputLabel,
 	Select,
 	MenuItem,
+	NativeSelect,
 } from "@material-ui/core";
 import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
 import { Delete as DeleteIcon, Edit as EditIcon } from "@material-ui/icons";
@@ -25,9 +26,9 @@ import Task from "./taskcomponent";
 
 const ProductBacklog = (props) => {
 	const initialState = {
-		sprintTasks: [],
 		task: {},
 
+		selectedProject: "",
 		displaySelection: "Backlog",
 		openModal: false,
 		updateId: null,
@@ -36,9 +37,19 @@ const ProductBacklog = (props) => {
 	const reducer = (state, newState) => ({ ...state, ...newState });
 	const [state, setState] = useReducer(reducer, initialState);
 
-	const GET_TASKS = gql`
+	const GET_PROJECTS = gql`
 		query {
-			tasks {
+			projects {
+				id: _id
+				name
+			}
+		}
+	`;
+	const { loading, error, data } = useQuery(GET_PROJECTS);
+
+	const GET_TASKS = gql`
+		query($projectname: String) {
+			tasksforproject(projectname: $projectname) {
 				id: _id
 				name
 				description
@@ -53,10 +64,9 @@ const ProductBacklog = (props) => {
 		error: errorT,
 		loading: loadingT,
 		refetch: refetchTasks,
-	} = useQuery(GET_TASKS);
-	if (!loadingT && !errorT && !state.loaded) {
-		setState({ sprintTasks: dataT.tasks, loaded: true });
-	}
+	} = useQuery(GET_TASKS, {
+		variables: { projectname: state.selectedProject },
+	});
 
 	const DELETE_TASK = gql`
 		mutation($_id: ID) {
@@ -66,8 +76,8 @@ const ProductBacklog = (props) => {
 	const [deleteTask] = useMutation(DELETE_TASK);
 
 	const GET_SPRINTS = gql`
-		query {
-			sprints
+		query($projectname: String) {
+			sprintsinproject(projectname: $projectname)
 		}
 	`;
 	const {
@@ -75,11 +85,13 @@ const ProductBacklog = (props) => {
 		error: errorS,
 		loading: loadingS,
 		refetch: refetchSprints,
-	} = useQuery(GET_SPRINTS);
+	} = useQuery(GET_SPRINTS, {
+		variables: { projectname: state.selectedProject },
+	});
 
 	const ADD_SPRINT = gql`
-		mutation($num: Int) {
-			addsprint(num: $num) {
+		mutation($num: Int, $projectname: String) {
+			addsprint(num: $num, projectname: $projectname) {
 				num
 			}
 		}
@@ -87,8 +99,8 @@ const ProductBacklog = (props) => {
 	const [addSprint] = useMutation(ADD_SPRINT);
 
 	const GET_SPRINTTASKS = gql`
-		query($num: Int) {
-			tasksinsprint(num: $num) {
+		query($num: Int, $projectname: String) {
+			tasksinsprintforproject(num: $num, projectname: $projectname) {
 				id: _id
 				name
 				description
@@ -104,20 +116,31 @@ const ProductBacklog = (props) => {
 		loading: loadingSprintTasks,
 		refetch: refetchSprintTasks,
 	} = useQuery(GET_SPRINTTASKS, {
-		variables: { num: parseInt(state.displaySelection.slice(-1)) },
+		variables: {
+			num: parseInt(state.displaySelection.slice(-1)),
+			projectname: state.selectedProject,
+		},
 	});
 
-	const MOVETASKTOSPRINT = gql`
-		mutation($num: Int, $taskid: ID) {
-			movetasktosprint(num: $num, taskid: $taskid) {
+	const COPYTASKTOSPRINT = gql`
+		mutation($num: Int, $taskid: ID, $projectname: String) {
+			copytasktosprint(num: $num, taskid: $taskid, projectname: $projectname) {
 				num
 			}
 		}
 	`;
-	const [moveTaskToSprint] = useMutation(MOVETASKTOSPRINT);
+	const [copyTaskToSprint] = useMutation(COPYTASKTOSPRINT);
 
 	const columns = [
-		{ field: "projectname", headerName: "Project", width: 200 },
+		{
+			field: "finished",
+			headerName: "Finished",
+			sortable: false,
+			disableClickEventBubbling: true,
+			disableColumnMenu: true,
+			width: 100,
+			renderCell: (params) => {},
+		},
 		{ field: "name", headerName: "Name", width: 500 },
 		{
 			field: "description",
@@ -159,21 +182,32 @@ const ProductBacklog = (props) => {
 					refetchTasks();
 				};
 				const onClickDelete = async () => {
-					let results = await deleteTask({
-						variables: { _id: params.row.id },
-					});
-					refetchTasks();
-					sendParentMsg(results.data.removeproject);
+					if (state.displaySelection !== "Backlog") {
+						///TODO
+						//let results = await removeFromSprint({
+						//	variables: { _id: params.row.id,
+						//				num: parseInt(state.displaySelection.slice(-1))
+						//  },
+						//});
+					} else {
+						let results = await deleteTask({
+							variables: { _id: params.row.id },
+						});
+						refetchTasks();
+						sendParentMsg(results.data.removeproject);
+					}
 				};
 				const handleSprintChange = async (e) => {
-					let results = await moveTaskToSprint({
+					await copyTaskToSprint({
 						variables: {
 							num: parseInt(e.target.value.slice(-1)),
 							taskid: params.row.id,
+							projectname: state.selectedProject,
 						},
 					});
+					sendParentMsg("Copied to " + e.target.value);
+					refetchSprintTasks();
 					refetchTasks();
-					sendParentMsg("Moved to " + e.target.value);
 				};
 
 				return (
@@ -190,13 +224,15 @@ const ProductBacklog = (props) => {
 								onChange={handleSprintChange}
 								label="Sprint"
 								style={{ width: "10vh" }}
+								value={
+									state.displaySelection !== "Backlog"
+										? state.displaySelection
+										: ""
+								}
 							>
-								<MenuItem value="">
-									<em>Backlog</em>
-								</MenuItem>
 								{!loadingS &&
 									!errorS &&
-									dataS.sprints.map((sprint) => {
+									dataS.sprintsinproject.map((sprint) => {
 										let sprintDisplayVal = `Sprint ${sprint}`;
 										return (
 											<MenuItem value={sprintDisplayVal}>
@@ -234,10 +270,11 @@ const ProductBacklog = (props) => {
 		if (selection === "Add") {
 			//get the last sprint number
 			let sprintNum = 1;
-			if (!loadingS && !errorS) sprintNum += dataS.sprints.length;
+			if (!loadingS && !errorS) sprintNum += dataS.sprintsinproject.length;
 			await addSprint({
 				variables: {
 					num: parseInt(sprintNum),
+					projectname: state.selectedProject,
 				},
 			});
 			refetchSprints();
@@ -245,13 +282,8 @@ const ProductBacklog = (props) => {
 			setState({ displaySelection: selection });
 			if (selection === "Backlog") {
 				refetchTasks();
-				if (!loadingT && !errorT) setState({ sprintTasks: dataT.tasks });
 			} else {
-				if (!loadingSprintTasks && !errorSprintTasks) {
-					refetchSprintTasks();
-					setState({ sprintTasks: dataSprintTasks.tasksinsprint });
-					console.log(dataSprintTasks.tasksinsprint);
-				}
+				refetchSprintTasks();
 			}
 		}
 	};
@@ -268,6 +300,33 @@ const ProductBacklog = (props) => {
 					}
 				/>
 				<CardContent style={{ height: "100vh", width: "98%" }}>
+					<FormControl>
+						<InputLabel>Project</InputLabel>
+						<NativeSelect
+							value={state.selectedProject}
+							onChange={(e) => {
+								let newTask = state.task;
+								newTask.projectName = e.target.value;
+								setState({
+									selectedProject: e.target.value,
+									task: newTask,
+								});
+							}}
+							inputProps={{
+								name: "projectName",
+								id: "projectName-native-simple",
+							}}
+						>
+							<option aria-label="None" value="" />
+							{!loading &&
+								!error &&
+								data?.projects?.map((proj) => (
+									<option key={proj.id} value={proj.name}>
+										{proj.name}
+									</option>
+								))}
+						</NativeSelect>
+					</FormControl>
 					<ToggleButtonGroup
 						size="medium"
 						value={state.displaySelection}
@@ -276,7 +335,7 @@ const ProductBacklog = (props) => {
 						aria-label="text alignment"
 						style={{
 							paddingBottom: 20,
-							paddingLeft: 100,
+							paddingLeft: 40,
 						}}
 					>
 						<ToggleButton value="Backlog">
@@ -284,7 +343,7 @@ const ProductBacklog = (props) => {
 						</ToggleButton>
 						{!loadingS &&
 							!errorS &&
-							dataS.sprints.map((sprint) => {
+							dataS.sprintsinproject.map((sprint) => {
 								let sprintDisplayVal = `Sprint ${sprint}`;
 								return (
 									<ToggleButton value={sprintDisplayVal}>
@@ -294,6 +353,7 @@ const ProductBacklog = (props) => {
 							})}
 						<ToggleButton
 							value="Add"
+							disabled={state.selectedProject === ""}
 							style={{ backgroundColor: theme.palette.primary.light }}
 						>
 							<Typography>Add Sprint..</Typography>
@@ -301,20 +361,22 @@ const ProductBacklog = (props) => {
 					</ToggleButtonGroup>
 					{state.displaySelection === "Backlog" && !loadingT && !errorT && (
 						<DataGrid
-							rows={dataT.tasks}
+							rows={dataT.tasksforproject}
 							columns={columns}
 							autoHeight="true"
 							pageSize={8}
 						/>
 					)}
-					{state.displaySelection !== "Backlog" && (
-						<DataGrid
-							rows={state.sprintTasks}
-							columns={columns}
-							autoHeight="true"
-							pageSize="8"
-						/>
-					)}
+					{state.displaySelection !== "Backlog" &&
+						!loadingSprintTasks &&
+						!errorSprintTasks && (
+							<DataGrid
+								rows={dataSprintTasks.tasksinsprintforproject}
+								columns={columns}
+								autoHeight="true"
+								pageSize="8"
+							/>
+						)}
 					<Button
 						color="primary"
 						variant="contained"
