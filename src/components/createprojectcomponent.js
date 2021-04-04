@@ -326,7 +326,11 @@ const CreateProject = (props) => {
           <CardHeader
             style={{ textAlign: "center" }}
             title={
-              <Typography variant="h5" color="primary">
+              <Typography
+                variant="h5"
+                color="primary"
+                style={{ fontWeight: "bold" }}
+              >
                 {state.buttonText}
               </Typography>
             }
@@ -334,7 +338,7 @@ const CreateProject = (props) => {
           <CardContent>
             <TextField
               onChange={handleNameInput}
-              label="Product Name"
+              label="Project Name"
               fullWidth
               value={state.name}
             />

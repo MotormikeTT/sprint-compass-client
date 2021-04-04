@@ -106,7 +106,11 @@ const CreateReport = (props) => {
           <CardHeader
             style={{ textAlign: "center" }}
             title={
-              <Typography variant="h5" color="primary">
+              <Typography
+                variant="h5"
+                color="primary"
+                style={{ fontWeight: "bold" }}
+              >
                 Report
               </Typography>
             }
