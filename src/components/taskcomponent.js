@@ -304,21 +304,16 @@ const Task = (props) => {
             </Typography>
           }
         />
-        <CardHeader
-          style={{ textAlign: "center" }}
-          title={
-            <TextField
-              onChange={handleNameInput}
-              label="Name"
-              fullWidth
-              value={state.taskName}
-            />
-          }
-        />
         <CardContent>
           <div syles={{ flexGrow: 1 }}>
             <Grid container spacing={3}>
               <Grid item xs={6}>
+                <TextField
+                  onChange={handleNameInput}
+                  label="Name"
+                  fullWidth
+                  value={state.taskName}
+                />
                 <FormControl>
                   <InputLabel>Project</InputLabel>
                   <NativeSelect
@@ -360,7 +355,9 @@ const Task = (props) => {
               </Grid>
               {state.updateId && (
                 <Grid item xs={6}>
-                  <Typography style={{ fontSize: "small", fontWeight: "bold" }}>
+                  <Typography
+                    style={{ fontSize: "medium", fontWeight: "bold" }}
+                  >
                     Subtasks
                   </Typography>
                   {!loadingSubtask &&
@@ -405,7 +402,7 @@ const Task = (props) => {
                     ))}
                   <TextField
                     onChange={handleNewSubtaskNameInput}
-                    label="create new subtask..."
+                    label="create a new subtask..."
                     fullWidth
                     value={state.subtask.newSubtaskName}
                     InputProps={{
