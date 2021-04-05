@@ -7,7 +7,7 @@ import {
   CardHeader,
   TextField,
   Button,
-  Grid,
+  Typography,
 } from "@material-ui/core";
 import { gql, useMutation } from "@apollo/client";
 
@@ -90,42 +90,43 @@ const Subtask = (props) => {
         <CardHeader
           style={{ textAlign: "center" }}
           title={
-            <TextField
-              onChange={handleSubtaskNameInput}
-              label="Subtask"
-              fullWidth
-              value={state.subtaskName}
-            />
+            <Typography
+              variant="h5"
+              color="primary"
+              style={{ fontWeight: "bold" }}
+            >
+              Edit Subtask
+            </Typography>
           }
         />
         <CardContent>
-          <div syles={{ flexGrow: 1 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={6}>
-                <TextField
-                  onChange={handleSubtaskDescriptionInput}
-                  label="Description"
-                  fullWidth
-                  value={state.subtaskDescription}
-                />
-                <TextField
-                  onChange={handleSubtaskHoursWorkedInput}
-                  label="Hours Worked"
-                  fullWidth
-                  type="number"
-                  value={state.subtaskHoursWorked}
-                />
-                <TextField
-                  onChange={handleSubtaskRelativeEstimatePointInput}
-                  label="Relative Estimate"
-                  fullWidth
-                  type="number"
-                  value={state.subtaskRelativeEstimate}
-                />{" "}
-              </Grid>
-            </Grid>
-          </div>
-
+          <TextField
+            onChange={handleSubtaskNameInput}
+            label="Subtask"
+            fullWidth
+            value={state.subtaskName}
+          />
+          <TextField
+            onChange={handleSubtaskDescriptionInput}
+            label="Description"
+            fullWidth
+            value={state.subtaskDescription}
+          />
+          <br />
+          <TextField
+            onChange={handleSubtaskHoursWorkedInput}
+            label="Hours Worked"
+            fullWidth
+            type="number"
+            value={state.subtaskHoursWorked}
+          />
+          <TextField
+            onChange={handleSubtaskRelativeEstimatePointInput}
+            label="Relative Estimate"
+            fullWidth
+            type="number"
+            value={state.subtaskRelativeEstimate}
+          />{" "}
           <Button
             color="primary"
             variant="contained"

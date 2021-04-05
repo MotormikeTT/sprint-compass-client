@@ -306,7 +306,7 @@ const Task = (props) => {
         />
         <CardContent>
           <div syles={{ flexGrow: 1 }}>
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid item xs={6}>
                 <TextField
                   onChange={handleNameInput}
@@ -363,42 +363,59 @@ const Task = (props) => {
                   {!loadingSubtask &&
                     !errorSubtask &&
                     dataSubtask.subtasksbytaskid.map((subtask) => (
-                      <Typography
-                        style={{
-                          marginLeft: 10,
-                          fontSize: 16,
-                        }}
-                      >
-                        {subtask.name}
-                        <IconButton
-                          onClick={() => {
-                            setState({
-                              subtask: {
-                                subtaskId: subtask.id,
-                                subtaskName: subtask.name,
-                                subtaskDescription: subtask.description,
-                                subtaskHoursWorked: subtask.hoursworked,
-                                subtaskRelativeEstimate:
-                                  subtask.relativeestimate,
-                                taskid: state.updateId,
-                              },
-                              openSubtaskModal: true,
-                            });
+                      <div style={{ display: "flex" }}>
+                        <Typography
+                          style={{
+                            marginTop: 7,
+                            marginLeft: 10,
+                            fontSize: 16,
+                            width: "30%",
                           }}
                         >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          onClick={async () => {
-                            await deleteSubtask({
-                              variables: { _id: subtask.id },
-                            });
-                            refetchSubtasks();
+                          {subtask.name}
+                        </Typography>
+                        <Typography
+                          style={{
+                            color: "grey",
                           }}
                         >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Typography>
+                          {subtask.hoursworked}h{" "}
+                          <IconButton
+                            onClick={() => {
+                              setState({
+                                subtask: {
+                                  subtaskId: subtask.id,
+                                  subtaskName: subtask.name,
+                                  subtaskDescription: subtask.description,
+                                  subtaskHoursWorked: subtask.hoursworked,
+                                  subtaskRelativeEstimate:
+                                    subtask.relativeestimate,
+                                  taskid: state.updateId,
+                                },
+                                openSubtaskModal: true,
+                              });
+                            }}
+                          >
+                            <EditIcon
+                              fontSize="small"
+                              style={{ marginTop: -5 }}
+                            />
+                          </IconButton>
+                          <IconButton
+                            onClick={async () => {
+                              await deleteSubtask({
+                                variables: { _id: subtask.id },
+                              });
+                              refetchSubtasks();
+                            }}
+                          >
+                            <DeleteIcon
+                              fontSize="small"
+                              style={{ marginTop: -5 }}
+                            />
+                          </IconButton>
+                        </Typography>
+                      </div>
                     ))}
                   <TextField
                     onChange={handleNewSubtaskNameInput}

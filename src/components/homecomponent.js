@@ -177,7 +177,11 @@ const Home = (props) => {
               Project
             </Button>
             <Modal
-              style={{ padding: 30, paddingLeft: "25%", paddingRight: "25%" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
               open={state.open}
               onClose={handleClose}
             >
