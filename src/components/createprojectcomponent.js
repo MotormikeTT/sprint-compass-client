@@ -207,6 +207,7 @@ const CreateProject = (props) => {
       showTeam: true,
       projectId: props.updateId,
     });
+    refetchTeam();
   } else if (props.updateId === "blank" && !state.refresh) {
     setState({
       name: "",
@@ -221,7 +222,6 @@ const CreateProject = (props) => {
       showTeam: false,
       projectId: props.updateId,
     });
-    refetchTeam();
   }
 
   const handleNameInput = (e) => {
