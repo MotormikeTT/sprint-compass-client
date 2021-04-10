@@ -41,6 +41,9 @@ const CreateProject = (props) => {
     refresh: false,
     buttonText: "Create Project",
 
+    showTeam: null,
+    projectId: null,
+
     team: {},
 
     openTeamModal: false,
@@ -119,6 +122,21 @@ const CreateProject = (props) => {
     }
   `;
 
+  const PROJECT_BY_DATA = gql`
+    query($name: String, $team: String, $startdate: String) {
+      projectbydata(name: $name, team: $team, startdate: $startdate) {
+        _id
+        name: name
+        team: team
+        startdate: startdate
+        storypointconversion
+        totalstorypoints
+        totalcost
+        hourlyrate
+      }
+    }
+  `;
+
   const [addProject] = useMutation(ADD_PROJECT);
 
   const [updateProject] = useMutation(UPDATE_PROJECT);
@@ -126,6 +144,18 @@ const CreateProject = (props) => {
   const { loading, error, data } = useQuery(GET_PROJECT, {
     variables: { _id: props.updateId },
   });
+
+  // get new project id
+  const { data: dataProjectData, refetch: refetchProjectData } = useQuery(
+    PROJECT_BY_DATA,
+    {
+      variables: {
+        name: state.name,
+        team: state.teamName,
+        startdate: state.selectedDate,
+      },
+    }
+  );
 
   const GET_TEAM = gql`
     query($_id: ID) {
@@ -135,13 +165,14 @@ const CreateProject = (props) => {
       }
     }
   `;
+
   const {
     data: dataTeam,
     error: errorTeam,
     loading: loadingTeam,
     refetch: refetchTeam,
   } = useQuery(GET_TEAM, {
-    variables: { _id: props.updateId },
+    variables: { _id: state.projectId },
   });
 
   const ADD_TEAM = gql`
@@ -173,8 +204,9 @@ const CreateProject = (props) => {
       hourlyRate: data.projectbyid.hourlyrate,
       selectedProject: true,
       buttonText: "Update Project",
+      showTeam: true,
+      projectId: props.updateId,
     });
-    refetchTeam();
   } else if (props.updateId === "blank" && !state.refresh) {
     setState({
       name: "",
@@ -186,7 +218,10 @@ const CreateProject = (props) => {
       hourlyRate: "",
       refresh: true,
       buttonText: "Create Project",
+      showTeam: false,
+      projectId: props.updateId,
     });
+    refetchTeam();
   }
 
   const handleNameInput = (e) => {
@@ -251,7 +286,7 @@ const CreateProject = (props) => {
     state.selectedProject
       ? (results = await updateProject({
           variables: {
-            _id: props.updateId,
+            _id: state.projectId,
             name: state.name,
             team: state.teamName,
             startdate: state.selectedDate,
@@ -273,16 +308,25 @@ const CreateProject = (props) => {
           },
         }));
 
-    results.data.addproject != null
-      ? sendParentMsg("added new project successfully!")
-      : sendParentMsg(results.data.updateproject);
+    refetchProjectData();
+    if (results.data.addproject != null) {
+      setState({
+        showTeam: true,
+        buttonText: "Update Project",
+        selectedProject: true,
+      });
+      sendParentMsg("added new project successfully!");
+    } else {
+      sendParentMsg(results.data.updateproject);
+    }
   };
 
   const onTeamButtonClicked = async () => {
+    let id = dataProjectData.projectbydata._id;
     let response = await addTeam({
       variables: {
         name: state.team.newTeamMemberName,
-        projectid: props.updateId,
+        projectid: id,
       },
     });
 
@@ -291,6 +335,7 @@ const CreateProject = (props) => {
       : sendParentMsg(`send failed - ${response.data}`);
 
     setState({
+      projectId: id,
       openTeamModal: false,
       team: {
         teamId: null,
@@ -326,93 +371,82 @@ const CreateProject = (props) => {
             }
           />
           <CardContent>
-            <TextField
-              onChange={handleNameInput}
-              label="Project Name"
-              fullWidth
-              value={state.name}
-            />
-            <TextField
-              onChange={handleTeamNameInput}
-              label="Team Name"
-              fullWidth
-              value={state.teamName}
-            />
-            <KeyboardDatePicker
-              disableToolbar
-              variant="inline"
-              format="MM/dd/yyyy"
-              margin="normal"
-              label="Start Date"
-              value={state.selectedDate}
-              onChange={handleDateChange}
-              KeyboardButtonProps={{
-                "aria-label": "change date",
-              }}
-              fullWidth
-            />
-            <TextField
-              onChange={handleStoryPointInput}
-              label="Story Point Conversion"
-              fullWidth
-              type="number"
-              value={state.storyPointConversion}
-            />
-            <TextField
-              onChange={handleTotalStoryPointInput}
-              label="Total Story Points"
-              fullWidth
-              type="number"
-              value={state.totalStoryPoint}
-            />
-            <TextField
-              onChange={handleTotalCostInput}
-              label="Total Cost"
-              fullWidth
-              type="number"
-              value={state.totalCost}
-            />
-            <TextField
-              onChange={handleHourlyRateInput}
-              label="Hourly Rate"
-              fullWidth
-              type="number"
-              value={state.hourlyRate}
-            />
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={onAddClicked}
-              disabled={emptyorundefined}
-              style={{
-                marginTop: 25,
-                display: "block",
-                marginLeft: "auto",
-                marginRight: "auto",
-              }}
-            >
-              {state.buttonText}
-            </Button>
-            <br />
             <div styles={{ flexGrow: 1 }}>
-              <Grid container spacing={3}>
-                {props.updateId && state.teamName && (
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    onChange={handleNameInput}
+                    label="Project Name"
+                    fullWidth
+                    value={state.name}
+                  />
+                  <TextField
+                    onChange={handleTeamNameInput}
+                    label="Team Name"
+                    fullWidth
+                    value={state.teamName}
+                  />
+                  <KeyboardDatePicker
+                    disableToolbar
+                    variant="inline"
+                    format="MM/dd/yyyy"
+                    margin="normal"
+                    label="Start Date"
+                    value={state.selectedDate}
+                    onChange={handleDateChange}
+                    KeyboardButtonProps={{
+                      "aria-label": "change date",
+                    }}
+                    fullWidth
+                  />
+                  <TextField
+                    onChange={handleStoryPointInput}
+                    label="Story Point Conversion"
+                    fullWidth
+                    type="number"
+                    value={state.storyPointConversion}
+                  />
+                  <TextField
+                    onChange={handleTotalStoryPointInput}
+                    label="Total Story Points"
+                    fullWidth
+                    type="number"
+                    value={state.totalStoryPoint}
+                  />
+                  <TextField
+                    onChange={handleTotalCostInput}
+                    label="Total Cost"
+                    fullWidth
+                    type="number"
+                    value={state.totalCost}
+                  />
+                  <TextField
+                    onChange={handleHourlyRateInput}
+                    label="Hourly Rate"
+                    fullWidth
+                    type="number"
+                    value={state.hourlyRate}
+                  />
+                </Grid>
+                {state.showTeam && (
                   <Grid item xs={6}>
-                    <Typography variant="h5" color="primary">
+                    <Typography
+                      style={{ fontSize: "medium", fontWeight: "bold" }}
+                    >
                       Team: {state.teamName}
                     </Typography>
                     {!loadingTeam &&
                       !errorTeam &&
                       dataTeam.teambyprojectid.map((team) => (
                         <Typography style={{ marginLeft: 10, fontSize: 16 }}>
-                          {team.name}
+                          {team.name} {team.projectid}
                           <IconButton
                             onClick={() => {
                               setState({
                                 team: {
                                   teamId: team.id,
                                   teamMemberName: team.name,
-                                  projectid: props.updateId,
+                                  projectid: state.projectId,
                                 },
                                 openTeamModal: true,
                               });
@@ -462,6 +496,21 @@ const CreateProject = (props) => {
                 )}
               </Grid>
             </div>
+
+            <Button
+              color="primary"
+              variant="contained"
+              onClick={onAddClicked}
+              disabled={emptyorundefined}
+              style={{
+                marginTop: 25,
+                display: "block",
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            >
+              {state.buttonText}
+            </Button>
           </CardContent>
         </Card>
         <Modal
@@ -480,7 +529,7 @@ const CreateProject = (props) => {
             timeout: 500,
           }}
         >
-          {!loading && !error && (
+          {state.showTeam === true && (
             <Fade in={state.openTeamModal}>
               <Team team={state.team} dataFromChild={msgFromChild} />
             </Fade>

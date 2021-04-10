@@ -190,13 +190,13 @@ const Task = (props) => {
         ? sendParentMsg(`added new task on ${new Date()}`)
         : sendParentMsg(`send failed - ${response.data}`);
 
-      setState({
-        taskName: "",
-        description: "",
-        costEstimate: "",
-        relativeEstimate: "",
-        projectName: "",
-      });
+      // setState({
+      //   taskName: "",
+      //   description: "",
+      //   costEstimate: "",
+      //   relativeEstimate: "",
+      //   projectName: "",
+      // });
     }
     props.refetchTasks();
   };
@@ -422,6 +422,13 @@ const Task = (props) => {
                     label="create a new subtask..."
                     fullWidth
                     value={state.subtask.newSubtaskName}
+                    onKeyPress={(ev) => {
+                      if (ev.key === "Enter") {
+                        // Do code here
+                        onSubtaskButtonClicked();
+                        ev.preventDefault();
+                      }
+                    }}
                     InputProps={{
                       endAdornment: (
                         <IconButton
