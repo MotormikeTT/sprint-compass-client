@@ -6,15 +6,16 @@ import { BrowserRouter as Router } from "react-router-dom";
 import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 
 const client = new ApolloClient({
-  uri: "http://localhost:5000/graphql",
-  cache: new InMemoryCache(),
+	uri: "http://localhost:5000/graphql",
+	forceFetch: true,
+	cache: new InMemoryCache(),
 });
 
 render(
-  <ApolloProvider client={client}>
-    <Router>
-      <App />
-    </Router>
-  </ApolloProvider>,
-  document.querySelector("#root")
+	<ApolloProvider client={client}>
+		<Router>
+			<App />
+		</Router>
+	</ApolloProvider>,
+	document.querySelector("#root")
 );
