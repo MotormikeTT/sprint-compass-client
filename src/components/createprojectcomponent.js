@@ -273,15 +273,6 @@ const CreateProject = (props) => {
           },
         }));
 
-    setState({
-      name: "",
-      teamName: "",
-      selectedDate: null,
-      storyPointConversion: "",
-      totalStoryPoint: "",
-      totalCost: "",
-      hourlyRate: "",
-    });
     results.data.addproject != null
       ? sendParentMsg("added new project successfully!")
       : sendParentMsg(results.data.updateproject);
@@ -316,7 +307,6 @@ const CreateProject = (props) => {
 
   const msgFromChild = (msg) => {
     sendParentMsg(msg);
-    handleTeamClose();
   };
 
   return (
@@ -336,68 +326,79 @@ const CreateProject = (props) => {
             }
           />
           <CardContent>
+            <TextField
+              onChange={handleNameInput}
+              label="Project Name"
+              fullWidth
+              value={state.name}
+            />
+            <TextField
+              onChange={handleTeamNameInput}
+              label="Team Name"
+              fullWidth
+              value={state.teamName}
+            />
+            <KeyboardDatePicker
+              disableToolbar
+              variant="inline"
+              format="MM/dd/yyyy"
+              margin="normal"
+              label="Start Date"
+              value={state.selectedDate}
+              onChange={handleDateChange}
+              KeyboardButtonProps={{
+                "aria-label": "change date",
+              }}
+              fullWidth
+            />
+            <TextField
+              onChange={handleStoryPointInput}
+              label="Story Point Conversion"
+              fullWidth
+              type="number"
+              value={state.storyPointConversion}
+            />
+            <TextField
+              onChange={handleTotalStoryPointInput}
+              label="Total Story Points"
+              fullWidth
+              type="number"
+              value={state.totalStoryPoint}
+            />
+            <TextField
+              onChange={handleTotalCostInput}
+              label="Total Cost"
+              fullWidth
+              type="number"
+              value={state.totalCost}
+            />
+            <TextField
+              onChange={handleHourlyRateInput}
+              label="Hourly Rate"
+              fullWidth
+              type="number"
+              value={state.hourlyRate}
+            />
+            <Button
+              color="primary"
+              variant="contained"
+              onClick={onAddClicked}
+              disabled={emptyorundefined}
+              style={{
+                marginTop: 25,
+                display: "block",
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            >
+              {state.buttonText}
+            </Button>
+            <br />
             <div styles={{ flexGrow: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <TextField
-                    onChange={handleNameInput}
-                    label="Project Name"
-                    fullWidth
-                    value={state.name}
-                  />
-                  <TextField
-                    onChange={handleTeamNameInput}
-                    label="Team Name"
-                    fullWidth
-                    value={state.teamName}
-                  />
-                  <KeyboardDatePicker
-                    disableToolbar
-                    variant="inline"
-                    format="MM/dd/yyyy"
-                    margin="normal"
-                    label="Start Date"
-                    value={state.selectedDate}
-                    onChange={handleDateChange}
-                    KeyboardButtonProps={{
-                      "aria-label": "change date",
-                    }}
-                    fullWidth
-                  />
-                  <TextField
-                    onChange={handleStoryPointInput}
-                    label="Story Point Conversion"
-                    fullWidth
-                    type="number"
-                    value={state.storyPointConversion}
-                  />
-                  <TextField
-                    onChange={handleTotalStoryPointInput}
-                    label="Total Story Points"
-                    fullWidth
-                    type="number"
-                    value={state.totalStoryPoint}
-                  />
-                  <TextField
-                    onChange={handleTotalCostInput}
-                    label="Total Cost"
-                    fullWidth
-                    type="number"
-                    value={state.totalCost}
-                  />
-                  <TextField
-                    onChange={handleHourlyRateInput}
-                    label="Hourly Rate"
-                    fullWidth
-                    type="number"
-                    value={state.hourlyRate}
-                  />
-                </Grid>
+              <Grid container spacing={3}>
                 {props.updateId && state.teamName && (
                   <Grid item xs={6}>
-                    <Typography
-                      style={{ fontSize: "medium", fontWeight: "bold" }}
-                    >
+                    <Typography variant="h5" color="primary">
                       Team: {state.teamName}
                     </Typography>
                     {!loadingTeam &&
@@ -461,21 +462,6 @@ const CreateProject = (props) => {
                 )}
               </Grid>
             </div>
-
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={onAddClicked}
-              disabled={emptyorundefined}
-              style={{
-                marginTop: 25,
-                display: "block",
-                marginLeft: "auto",
-                marginRight: "auto",
-              }}
-            >
-              {state.buttonText}
-            </Button>
           </CardContent>
         </Card>
         <Modal

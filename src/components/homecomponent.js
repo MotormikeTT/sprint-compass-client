@@ -108,8 +108,8 @@ const Home = (props) => {
           let results = await deleteProject({
             variables: { _id: params.row.id },
           });
+          sendParentMsg(results.data.removeproject);
           refetch();
-          console.log(results.data.removeproject); // TO DO: Output the message to snackbar
         };
 
         return (
@@ -132,67 +132,63 @@ const Home = (props) => {
 
   const msgFromChild = (msg) => {
     sendParentMsg(msg);
-    handleClose();
   };
 
   const sendParentMsg = (msg) => {
     props.dataFromChild(msg);
+    refetch();
   };
 
   return (
     <MuiThemeProvider theme={theme}>
-      {!loading && (
-        <Card style={{ padding: 20 }}>
-          <CardHeader
-            style={{ textAlign: "center" }}
-            title={
-              <Typography
-                variant="h5"
-                color="primary"
-                style={{ fontWeight: "bold" }}
-              >
-                Projects
-              </Typography>
-            }
-          />
-          <CardContent style={{ height: "100vh", width: "98%" }}>
+      <Card style={{ padding: 20 }}>
+        <CardHeader
+          style={{ textAlign: "center" }}
+          title={
+            <Typography
+              variant="h5"
+              color="primary"
+              style={{ fontWeight: "bold" }}
+            >
+              Projects
+            </Typography>
+          }
+        />
+        <CardContent style={{ height: "100vh", width: "98%" }}>
+          {!loading && !error && (
             <DataGrid
               rows={data.projects}
               columns={columns}
               autoHeight="true"
               pageSize={8}
             />
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={onAddClicked}
-              style={{
-                marginTop: 15,
-                display: "block",
-                marginLeft: "auto",
-                marginRight: "auto",
-              }}
-            >
-              <AddIcon fontSize="small" style={{ marginBottom: -5 }} /> New
-              Project
-            </Button>
-            <Modal
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              open={state.open}
-              onClose={handleClose}
-            >
-              <CreateProject
-                updateId={state.updateId}
-                dataFromChild={msgFromChild}
-              />
-            </Modal>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={onAddClicked}
+            style={{
+              marginTop: 15,
+              display: "block",
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <AddIcon fontSize="small" style={{ marginBottom: -5 }} /> New
+            Project
+          </Button>
+          <Modal
+            style={{ padding: 30, paddingLeft: "25%", paddingRight: "25%" }}
+            open={state.open}
+            onClose={handleClose}
+          >
+            <CreateProject
+              updateId={state.updateId}
+              dataFromChild={msgFromChild}
+            />
+          </Modal>
+        </CardContent>
+      </Card>
     </MuiThemeProvider>
   );
 };
