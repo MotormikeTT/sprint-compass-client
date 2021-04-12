@@ -109,9 +109,11 @@ const Task = (props) => {
         description
         hoursworked
         relativeestimate
+        assignedname
       }
     }
   `;
+
   const {
     data: dataSubtask,
     error: errorSubtask,
@@ -127,6 +129,7 @@ const Task = (props) => {
       $description: String
       $hoursworked: Float
       $relativeestimate: Float
+      $assignedname: String
       $taskid: ID
     ) {
       addsubtask(
@@ -134,12 +137,14 @@ const Task = (props) => {
         description: $description
         hoursworked: $hoursworked
         relativeestimate: $relativeestimate
+        assignedname: $assignedname
         taskid: $taskid
       ) {
         name
         description
         hoursworked
         relativeestimate
+        assignedname
         taskid
       }
     }
@@ -214,6 +219,7 @@ const Task = (props) => {
           state.subtask.subtaskRelativeEstimate === ""
             ? 0
             : state.subtask.subtaskRelativeEstimate,
+        assignedname: state.subtask.assignedName,
         taskid: state.updateId,
       },
     });
@@ -231,6 +237,7 @@ const Task = (props) => {
         subtaskDescription: "",
         subtaskHoursWorked: "",
         subtaskRelativeEstimate: "",
+        assignedName: "",
       },
     });
     refetchSubtasks();
@@ -269,6 +276,7 @@ const Task = (props) => {
         subtaskDescription: "",
         subtaskHoursWorked: "",
         subtaskRelativeEstimate: "",
+        assignedName: "",
       },
       openSubtaskModal: false,
     });
@@ -376,6 +384,17 @@ const Task = (props) => {
                         </Typography>
                         <Typography
                           style={{
+                            color: "red",
+                            marginTop: 7,
+                            marginLeft: 10,
+                            fontSize: 16,
+                            width: "30%",
+                          }}
+                        >
+                          {subtask.assignedname}
+                        </Typography>
+                        <Typography
+                          style={{
                             color: "grey",
                           }}
                         >
@@ -390,7 +409,9 @@ const Task = (props) => {
                                   subtaskHoursWorked: subtask.hoursworked,
                                   subtaskRelativeEstimate:
                                     subtask.relativeestimate,
+                                  assignedName: subtask.assignedname,
                                   taskid: state.updateId,
+                                  projectName: state.projectName,
                                 },
                                 openSubtaskModal: true,
                               });

@@ -14,17 +14,17 @@ const Team = (props) => {
   const initialState = {
     teamId: props.team.teamId || null,
     teamMemberName: props.team.teamMemberName || "",
-    projectId: props.team.projectid || "",
+    projectName: props.team.projectname || "",
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
   const [state, setState] = useReducer(reducer, initialState);
 
   const UPDATE_TEAM = gql`
-    mutation($_id: ID, $name: String, $projectid: ID) {
-      updateteam(_id: $_id, name: $name, projectid: $projectid) {
+    mutation($_id: ID, $name: String, $projectname: String) {
+      updateteam(_id: $_id, name: $name, projectname: $projectname) {
         name
-        projectid
+        projectname
       }
     }
   `;
@@ -32,11 +32,12 @@ const Team = (props) => {
   const [updateTeam] = useMutation(UPDATE_TEAM);
 
   const onTeamButtonClicked = async () => {
+    console.log(state.projectName);
     let response = await updateTeam({
       variables: {
         _id: state.teamId,
         name: state.teamMemberName,
-        projectid: state.projectId,
+        projectname: state.projectName,
       },
     });
 

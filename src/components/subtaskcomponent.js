@@ -8,8 +8,11 @@ import {
   TextField,
   Button,
   Typography,
+  FormControl,
+  InputLabel,
+  NativeSelect,
 } from "@material-ui/core";
-import { gql, useMutation } from "@apollo/client";
+import { gql, useMutation, useQuery } from "@apollo/client";
 
 const Subtask = (props) => {
   const initialState = {
@@ -19,11 +22,29 @@ const Subtask = (props) => {
     subtaskDescription: props.subtask.subtaskDescription || "",
     subtaskHoursWorked: props.subtask.subtaskHoursWorked || 0,
     subtaskRelativeEstimate: props.subtask.subtaskRelativeEstimate || 0,
+    assignedName: props.subtask.assignedName || "",
     taskId: props.subtask.taskid || "",
+    projectName: props.subtask.projectName,
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
   const [state, setState] = useReducer(reducer, initialState);
+
+  const GET_TEAM = gql`
+    query($projectname: String) {
+      teambyproject(projectname: $projectname) {
+        id: _id
+        name
+      }
+    }
+  `;
+
+  const { data: dataTeam, error: errorTeam, loading: loadingTeam } = useQuery(
+    GET_TEAM,
+    {
+      variables: { projectname: state.projectName },
+    }
+  );
 
   const UPDATE_SUBTASK = gql`
     mutation(
@@ -32,6 +53,7 @@ const Subtask = (props) => {
       $description: String
       $hoursworked: Float
       $relativeestimate: Float
+      $assignedname: String
       $taskid: ID
     ) {
       updatesubtask(
@@ -40,6 +62,7 @@ const Subtask = (props) => {
         description: $description
         hoursworked: $hoursworked
         relativeestimate: $relativeestimate
+        assignedname: $assignedname
         taskid: $taskid
       )
     }
@@ -55,6 +78,7 @@ const Subtask = (props) => {
         description: state.subtaskDescription,
         hoursworked: state.subtaskHoursWorked,
         relativeestimate: state.subtaskRelativeEstimate,
+        assignedname: state.assignedName,
         taskid: state.taskId,
       },
     });
@@ -78,6 +102,10 @@ const Subtask = (props) => {
 
   const handleSubtaskRelativeEstimatePointInput = (e) => {
     setState({ subtaskRelativeEstimate: parseFloat(e.target.value) });
+  };
+
+  const handleAssignedNameChange = (e) => {
+    setState({ assignedName: e.target.value });
   };
 
   const sendParentMsg = (msg) => {
@@ -126,7 +154,26 @@ const Subtask = (props) => {
             fullWidth
             type="number"
             value={state.subtaskRelativeEstimate}
-          />{" "}
+          />
+          <br />
+          <FormControl>
+            <InputLabel>Assigned To: </InputLabel>
+            <NativeSelect
+              value={state.assignedName}
+              onChange={handleAssignedNameChange}
+              inputProps={{
+                name: "assignedName",
+                id: "assignedName-native-simple",
+              }}
+            >
+              <option aria-label="None" value="" />
+              {dataTeam?.teambyproject?.map((proj) => (
+                <option key={proj.id} value={proj.name}>
+                  {proj.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </FormControl>
           <Button
             color="primary"
             variant="contained"

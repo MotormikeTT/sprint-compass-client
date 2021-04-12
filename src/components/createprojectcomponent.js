@@ -158,8 +158,8 @@ const CreateProject = (props) => {
   );
 
   const GET_TEAM = gql`
-    query($_id: ID) {
-      teambyprojectid(projectid: $_id) {
+    query($projectname: String) {
+      teambyproject(projectname: $projectname) {
         id: _id
         name
       }
@@ -172,14 +172,14 @@ const CreateProject = (props) => {
     loading: loadingTeam,
     refetch: refetchTeam,
   } = useQuery(GET_TEAM, {
-    variables: { _id: state.projectId },
+    variables: { projectname: state.name },
   });
 
   const ADD_TEAM = gql`
-    mutation($name: String, $projectid: ID) {
-      addteam(name: $name, projectid: $projectid) {
+    mutation($name: String, $projectname: String) {
+      addteam(name: $name, projectname: $projectname) {
         name
-        projectid
+        projectname
       }
     }
   `;
@@ -326,7 +326,7 @@ const CreateProject = (props) => {
     let response = await addTeam({
       variables: {
         name: state.team.newTeamMemberName,
-        projectid: id,
+        projectname: state.name,
       },
     });
 
@@ -437,16 +437,16 @@ const CreateProject = (props) => {
                     </Typography>
                     {!loadingTeam &&
                       !errorTeam &&
-                      dataTeam.teambyprojectid.map((team) => (
+                      dataTeam.teambyproject.map((team) => (
                         <Typography style={{ marginLeft: 10, fontSize: 16 }}>
-                          {team.name} {team.projectid}
+                          {team.name}
                           <IconButton
                             onClick={() => {
                               setState({
                                 team: {
                                   teamId: team.id,
                                   teamMemberName: team.name,
-                                  projectid: state.projectId,
+                                  projectname: state.name,
                                 },
                                 openTeamModal: true,
                               });
