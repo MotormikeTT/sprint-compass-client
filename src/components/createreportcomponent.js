@@ -1,6 +1,6 @@
 import React, { useReducer } from "react";
 import { MuiThemeProvider } from "@material-ui/core/styles";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useLazyQuery } from "@apollo/client";
 import {
   Typography,
   Button,
@@ -38,23 +38,68 @@ const CreateReport = (props) => {
     }
   `;
 
+  const GET_TASK_REPORT = gql`
+    query($num: Int, $projectname: String) {
+      taskreport(num: $num, projectname: $projectname) {
+        _id
+        name
+        costestimate
+        relativeestimate
+        projectname
+        subtasks {
+          _id
+          name
+          description
+          hoursworked
+          relativeestimate
+          assignedname
+          taskid
+        }
+      }
+    }
+  `;
+
   const initialState = {
     projectName: "",
     sprintNum: "",
+    taskid: "",
+    tasks: {},
   };
 
   const reducer = (state, newState) => ({ ...state, ...newState });
 
   const [state, setState] = useReducer(reducer, initialState);
 
-  const { loading, error, data } = useQuery(GET_REPORT_FOR_SPRINT);
+  const { loading, error, data: dataProjects } = useQuery(
+    GET_REPORT_FOR_SPRINT
+  );
+
+  const {
+    data: dataTasks,
+    error: errorTasks,
+    loading: loadingTasks,
+    refetch: refetchTasks,
+  } = useQuery(GET_TASK_REPORT, {
+    variables: {
+      num: parseInt(state.sprintNum),
+      projectname: state.projectName,
+    },
+    onCompleted: () => createReport(),
+  });
 
   const columns = [
-    { field: "storypoint", headerName: "Story Point", width: 220 },
-    { field: "subtask", headerName: "Subtask", width: 220 },
+    { field: "storypoint", headerName: "Story Point", width: 300 },
+    { field: "subtask", headerName: "Subtask", width: 300 },
+    { field: "assignedname", headerName: "Assigned To", width: 150 },
     {
       field: "status",
       headerName: "Status",
+      width: 100,
+    },
+    {
+      field: "originalhours",
+      headerName: "Original Hours Est.",
+      type: "number",
       width: 200,
     },
     {
@@ -67,19 +112,59 @@ const CreateReport = (props) => {
       field: "reestimate",
       headerName: "Re-Estimate to Complete",
       type: "number",
-      width: 300,
+      width: 200,
     },
   ];
 
-  const rows = [];
+  // TO DO: Add Reestimate
+  const createReport = () => {
+    if (!errorTasks && !loadingTasks && dataTasks.taskreport.length > 0) {
+      let report = [];
+      let id = 0;
+      dataTasks.taskreport.forEach((x) => {
+        let task = {};
+        let subtasks = [];
+        task.id = id++;
+        task.storypoint = x.name;
+        task.subtask = "";
+        task.assignedname = "";
+        let hoursworked = 0;
+        let reestimate = 0;
+        x.subtasks?.forEach((s) => {
+          let subtask = {};
+          subtask.id = id++;
+          subtask.storypoint = "";
+          subtask.subtask = s.name;
+          subtask.assignedname = s.assignedname;
+          subtask.status = "";
+          subtask.originalhours = 0;
+          subtask.totaltimespent = s.hoursworked;
+          hoursworked += s.hoursworked;
+          reestimate += 5; // s.reestimate
+          subtask.reestimate = 5; // s.reestimate
+          subtasks.push(subtask);
+        });
+        task.status =
+          ((hoursworked / (hoursworked + reestimate)) * 100).toFixed(2) + "%";
+        task.originalhours = x.relativeestimate;
+        task.totaltimespent = hoursworked;
+        task.reestimate = reestimate;
+        report.push(task);
+
+        subtasks.forEach((x) => report.push(x));
+      });
+      setState({ report: report });
+    }
+  };
 
   const onPrintClicked = async () => {
+    let t = dataTasks;
     window.print();
     sendParentMsg("report generated as a Print");
   };
 
   const onExcelClicked = async () => {
-    const ws = XLSX.utils.json_to_sheet(data.projects);
+    const ws = XLSX.utils.json_to_sheet(state.report);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "SheetJS");
     /* generate XLSX file and send to client */
@@ -126,7 +211,11 @@ const CreateReport = (props) => {
                   style={{ width: "30%" }}
                   value={state.projectName}
                   onChange={(e) =>
-                    setState({ projectName: e.target.value, sprintNum: "" })
+                    setState({
+                      projectName: e.target.value,
+                      sprintNum: "",
+                      report: [],
+                    })
                   }
                   inputProps={{
                     name: "projectName",
@@ -134,7 +223,7 @@ const CreateReport = (props) => {
                   }}
                 >
                   <option aria-label="None" value="" />
-                  {data?.projects?.map((proj) => (
+                  {dataProjects?.projects?.map((proj) => (
                     <option key={proj.id} value={proj.name}>
                       {proj.name}
                     </option>
@@ -144,7 +233,7 @@ const CreateReport = (props) => {
             }
             {
               // Picker to select sprint number you want to generate report for
-              state.projectName != "" && (
+              state.projectName !== "" && (
                 <FormControl
                   style={{ width: "100%", marginTop: 10, marginBottom: 10 }}
                 >
@@ -152,7 +241,10 @@ const CreateReport = (props) => {
                   <NativeSelect
                     style={{ width: "30%" }}
                     value={state.sprintNum}
-                    onChange={(e) => setState({ sprintNum: e.target.value })}
+                    onChange={async (e) => {
+                      setState({ sprintNum: e.target.value, report: [] });
+                      refetchTasks();
+                    }}
                     inputProps={{
                       name: "sprintNum",
                       id: "sprintNum-native-simple",
@@ -174,7 +266,7 @@ const CreateReport = (props) => {
             }
             {
               // Report title - `{state.projectName} Sprint #{state.sprintNum} Report`
-              state.projectName != "" && state.sprintNum != "" && (
+              state.projectName !== "" && state.sprintNum !== "" && (
                 <div>
                   <Typography
                     variant="h6"
@@ -188,7 +280,9 @@ const CreateReport = (props) => {
                 // DataGrid with columns: {subtask} {status} {timespent} {re-estimate}
                 // DataGrid with columns: {userstory} {subtask} {status} {timespent} {re-estimate} */}
                   <div style={{ height: 400, marginTop: 20, marginBottom: 20 }}>
-                    <DataGrid rows={rows} columns={columns} />
+                    {!loadingTasks && state.report != undefined && (
+                      <DataGrid rows={state.report} columns={columns} />
+                    )}
                   </div>
                   <Typography
                     style={{

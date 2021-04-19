@@ -193,7 +193,7 @@ const CreateProject = (props) => {
 
   const [deleteTeam] = useMutation(DELETE_TEAM);
 
-  if (!loading && !error && !state.selectedProject && props.updateId != null) {
+  if (!loading && !error && !state.selectedProject && props.updateId !== null) {
     setState({
       name: data.projectbyid.name,
       teamName: data.projectbyid.team,
@@ -309,7 +309,7 @@ const CreateProject = (props) => {
         }));
 
     refetchProjectData();
-    if (results.data.addproject != null) {
+    if (results.data.addproject !== null) {
       setState({
         showTeam: true,
         buttonText: "Update Project",
