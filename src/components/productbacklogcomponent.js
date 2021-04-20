@@ -196,14 +196,13 @@ const ProductBacklog = (props) => {
 								projectname: state.selectedProject,
 							},
 						});
-						refetchTasks();
 						refetchSprintTasks();
 						sendParentMsg(results.data.removetaskfromsprint);
 					} else {
 						let results = await deleteTask({
 							variables: { _id: params.row.id },
 						});
-						refetchSprintTasks();
+
 						sendParentMsg(results.data.removetask);
 					}
 				};
@@ -258,7 +257,7 @@ const ProductBacklog = (props) => {
 	];
 
 	const OpenModal = () => {
-		setState({ updateId: null, openModal: true });
+		setState({ updateId: null, task: {}, openModal: true });
 	};
 
 	const handleClose = () => {
@@ -288,11 +287,6 @@ const ProductBacklog = (props) => {
 			refetchSprints();
 		} else if (selection !== null) {
 			setState({ displaySelection: selection });
-			if (selection === "Backlog") {
-				refetchTasks();
-			} else {
-				refetchSprintTasks();
-			}
 		}
 	};
 
@@ -374,15 +368,18 @@ const ProductBacklog = (props) => {
 							</Typography>
 						</ToggleButton>
 					</ToggleButtonGroup>
-					{state.displaySelection === "Backlog" && !loadingT && !errorT && (
-						<DataGrid
-							rows={dataT.tasksforproject}
-							columns={columns}
-							autoHeight="true"
-							pageSize={8}
-							rowsPerPage={8}
-						/>
-					)}
+					{state.displaySelection === "Backlog" &&
+						!loadingT &&
+						!errorT &&
+						refetchTasks() && (
+							<DataGrid
+								rows={dataT.tasksforproject}
+								columns={columns}
+								autoHeight="true"
+								pageSize={8}
+								rowsPerPage={8}
+							/>
+						)}
 					{state.displaySelection !== "Backlog" &&
 						!loadingSprintTasks &&
 						!errorSprintTasks &&
@@ -430,6 +427,7 @@ const ProductBacklog = (props) => {
 					task={state.task}
 					dataFromChild={msgFromChild}
 					refetchTasks={refetchTasks}
+					closeModal={() => setState({ updateId: null, openModal: false })}
 				/>
 			</Modal>
 		</MuiThemeProvider>
