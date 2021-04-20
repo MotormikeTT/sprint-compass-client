@@ -22,6 +22,7 @@ const Subtask = (props) => {
     subtaskDescription: props.subtask.subtaskDescription || "",
     subtaskHoursWorked: props.subtask.subtaskHoursWorked || 0,
     subtaskRelativeEstimate: props.subtask.subtaskRelativeEstimate || 0,
+    subtaskReestimate: props.subtask.subtaskReestimate || 0,
     assignedName: props.subtask.assignedName || "",
     taskId: props.subtask.taskid || "",
     projectName: props.subtask.projectName,
@@ -53,6 +54,7 @@ const Subtask = (props) => {
       $description: String
       $hoursworked: Float
       $relativeestimate: Float
+      $reestimate: Float
       $assignedname: String
       $taskid: ID
     ) {
@@ -62,6 +64,7 @@ const Subtask = (props) => {
         description: $description
         hoursworked: $hoursworked
         relativeestimate: $relativeestimate
+        reestimate: $reestimate
         assignedname: $assignedname
         taskid: $taskid
       )
@@ -78,6 +81,7 @@ const Subtask = (props) => {
         description: state.subtaskDescription,
         hoursworked: state.subtaskHoursWorked,
         relativeestimate: state.subtaskRelativeEstimate,
+        reestimate: state.subtaskReestimate,
         assignedname: state.assignedName,
         taskid: state.taskId,
       },
@@ -102,6 +106,10 @@ const Subtask = (props) => {
 
   const handleSubtaskRelativeEstimatePointInput = (e) => {
     setState({ subtaskRelativeEstimate: parseFloat(e.target.value) });
+  };
+
+  const handleSubtaskReestimateInput = (e) => {
+    setState({ subtaskReestimate: parseFloat(e.target.value) });
   };
 
   const handleAssignedNameChange = (e) => {
@@ -154,6 +162,13 @@ const Subtask = (props) => {
             fullWidth
             type="number"
             value={state.subtaskRelativeEstimate}
+          />
+          <TextField
+            onChange={handleSubtaskReestimateInput}
+            label="Re-estimate to Complete"
+            fullWidth
+            type="number"
+            value={state.subtaskReestimate}
           />
           <br />
           <FormControl>

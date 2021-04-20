@@ -16,6 +16,7 @@
     "date-fns": "^2.19.0",
     "graphql": "^15.5.0",
     "jspdf": "^2.3.1",
+    "jspdf-autotable": "^3.5.14",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-router-dom": "^5.2.0",

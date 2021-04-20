@@ -109,6 +109,7 @@ const Task = (props) => {
         description
         hoursworked
         relativeestimate
+        reestimate
         assignedname
       }
     }
@@ -129,6 +130,7 @@ const Task = (props) => {
       $description: String
       $hoursworked: Float
       $relativeestimate: Float
+      $reestimate: Float
       $assignedname: String
       $taskid: ID
     ) {
@@ -137,6 +139,7 @@ const Task = (props) => {
         description: $description
         hoursworked: $hoursworked
         relativeestimate: $relativeestimate
+        reestimate: $reestimate
         assignedname: $assignedname
         taskid: $taskid
       ) {
@@ -144,6 +147,7 @@ const Task = (props) => {
         description
         hoursworked
         relativeestimate
+        reestimate
         assignedname
         taskid
       }
@@ -219,6 +223,10 @@ const Task = (props) => {
           state.subtask.subtaskRelativeEstimate === ""
             ? 0
             : state.subtask.subtaskRelativeEstimate,
+        reestimate:
+          state.subtask.subtaskReestimate === ""
+            ? 0
+            : state.subtask.subtaskReestimate,
         assignedname: state.subtask.assignedName,
         taskid: state.updateId,
       },
@@ -237,6 +245,7 @@ const Task = (props) => {
         subtaskDescription: "",
         subtaskHoursWorked: "",
         subtaskRelativeEstimate: "",
+        subtaskReestimate: "",
         assignedName: "",
       },
     });
@@ -276,6 +285,7 @@ const Task = (props) => {
         subtaskDescription: "",
         subtaskHoursWorked: "",
         subtaskRelativeEstimate: "",
+        subtaskReestimate: "",
         assignedName: "",
       },
       openSubtaskModal: false,
@@ -409,6 +419,7 @@ const Task = (props) => {
                                   subtaskHoursWorked: subtask.hoursworked,
                                   subtaskRelativeEstimate:
                                     subtask.relativeestimate,
+                                  subtaskReestimate: subtask.reestimate,
                                   assignedName: subtask.assignedname,
                                   taskid: state.updateId,
                                   projectName: state.projectName,

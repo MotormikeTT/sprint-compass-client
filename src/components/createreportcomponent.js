@@ -1,6 +1,6 @@
 import React, { useReducer } from "react";
 import { MuiThemeProvider } from "@material-ui/core/styles";
-import { gql, useQuery, useLazyQuery } from "@apollo/client";
+import { gql, useQuery } from "@apollo/client";
 import {
   Typography,
   Button,
@@ -18,6 +18,7 @@ import {
 } from "@material-ui/icons";
 import { DataGrid } from "@material-ui/data-grid";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import XLSX from "xlsx";
 
 import theme from "../theme";
@@ -52,6 +53,7 @@ const CreateReport = (props) => {
           description
           hoursworked
           relativeestimate
+          reestimate
           assignedname
           taskid
         }
@@ -70,9 +72,7 @@ const CreateReport = (props) => {
 
   const [state, setState] = useReducer(reducer, initialState);
 
-  const { loading, error, data: dataProjects } = useQuery(
-    GET_REPORT_FOR_SPRINT
-  );
+  const { loading, data: dataProjects } = useQuery(GET_REPORT_FOR_SPRINT);
 
   const {
     data: dataTasks,
@@ -88,31 +88,39 @@ const CreateReport = (props) => {
   });
 
   const columns = [
-    { field: "storypoint", headerName: "Story Point", width: 300 },
-    { field: "subtask", headerName: "Subtask", width: 300 },
-    { field: "assignedname", headerName: "Assigned To", width: 150 },
+    {
+      field: "storypoint",
+      headerName: "Story Point",
+      flex: 300,
+      renderCell: (params) => {
+        if (params.value === "Total") return <strong>{params.value}</strong>;
+        else return params.value;
+      },
+    },
+    { field: "subtask", headerName: "Subtask", flex: 300 },
+    { field: "assignedname", headerName: "Assigned To", flex: 150 },
     {
       field: "status",
       headerName: "Status",
-      width: 100,
+      flex: 100,
     },
     {
       field: "originalhours",
       headerName: "Original Hours Est.",
       type: "number",
-      width: 200,
+      flex: 200,
     },
     {
       field: "totaltimespent",
       headerName: "Total Time Spent",
       type: "number",
-      width: 200,
+      flex: 200,
     },
     {
       field: "reestimate",
       headerName: "Re-Estimate to Complete",
       type: "number",
-      width: 200,
+      flex: 200,
     },
   ];
 
@@ -121,6 +129,10 @@ const CreateReport = (props) => {
     if (!errorTasks && !loadingTasks && dataTasks.taskreport.length > 0) {
       let report = [];
       let id = 0;
+      let totalStatus = 0;
+      let totalOriginalHours = 0;
+      let totalTimeSpent = 0;
+      let totalReestimate = 0;
       dataTasks.taskreport.forEach((x) => {
         let task = {};
         let subtasks = [];
@@ -135,17 +147,22 @@ const CreateReport = (props) => {
           subtask.id = id++;
           subtask.storypoint = "";
           subtask.subtask = s.name;
-          subtask.assignedname = s.assignedname;
+          subtask.assignedname = s.assignedname || "N/A";
           subtask.status = "";
-          subtask.originalhours = 0;
-          subtask.totaltimespent = s.hoursworked;
+          subtask.originalhours = "";
+          subtask.totaltimespent = s.hoursworked || 0;
           hoursworked += s.hoursworked;
-          reestimate += 5; // s.reestimate
-          subtask.reestimate = 5; // s.reestimate
+          reestimate += s.reestimate;
+          subtask.reestimate = s.reestimate || 0;
           subtasks.push(subtask);
         });
+        totalStatus += (hoursworked / (hoursworked + reestimate) || 0) * 100;
+        totalOriginalHours += x.relativeestimate;
+        totalTimeSpent += hoursworked;
+        totalReestimate += reestimate;
         task.status =
-          ((hoursworked / (hoursworked + reestimate)) * 100).toFixed(2) + "%";
+          ((hoursworked / (hoursworked + reestimate) || 0) * 100).toFixed(2) +
+          "%";
         task.originalhours = x.relativeestimate;
         task.totaltimespent = hoursworked;
         task.reestimate = reestimate;
@@ -153,31 +170,64 @@ const CreateReport = (props) => {
 
         subtasks.forEach((x) => report.push(x));
       });
+      report.push({
+        id: id++,
+        storypoint: "Total",
+        subtask: "",
+        assignedname: "",
+        status: (totalStatus / dataTasks.taskreport.length).toFixed(2) + "%",
+        originalhours: totalOriginalHours,
+        totaltimespent: totalTimeSpent,
+        reestimate: totalReestimate,
+      });
       setState({ report: report });
     }
   };
 
   const onPrintClicked = async () => {
-    let t = dataTasks;
     window.print();
     sendParentMsg("report generated as a Print");
   };
 
   const onExcelClicked = async () => {
-    const ws = XLSX.utils.json_to_sheet(state.report);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "SheetJS");
-    /* generate XLSX file and send to client */
-    XLSX.writeFile(wb, "sheetjs.xlsx");
-    sendParentMsg("report generated as Excel Spreadsheet");
+    if (state.report.length > 0) {
+      const ws = XLSX.utils.json_to_sheet(state.report);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "SheetJS");
+      /* generate XLSX file and send to client */
+      XLSX.writeFile(wb, "sheetjs.xlsx");
+      sendParentMsg("report generated as Excel Spreadsheet");
+    } else sendParentMsg("nothing to report");
   };
 
   const onPDFClicked = async () => {
-    const doc = new jsPDF();
-
-    doc.text("Hello world!", 10, 10);
-    doc.save("a4.pdf");
-    sendParentMsg("report generated as PDF");
+    if (state.report.length > 0) {
+      const doc = new jsPDF("l");
+      doc.setTextColor(226, 115, 150);
+      doc.text(
+        `${state.projectName} - Sprint #${state.sprintNum} Report`,
+        20,
+        20
+      );
+      doc.autoTable({
+        head: [
+          [
+            "Storypoint",
+            "Subtask",
+            "Assigned To",
+            "Status",
+            "Original Hours Est.",
+            "Hours Worked",
+            "Re-estimate to Complete",
+          ],
+        ],
+        body: state.report.map((element) => Object.values(element).slice(1)),
+        startY: 30,
+        headStyles: { fillColor: [226, 115, 150] },
+      });
+      doc.save("sprintcompass_report.pdf");
+      sendParentMsg("report generated as PDF");
+    } else sendParentMsg("nothing to report");
   };
 
   const sendParentMsg = (msg) => {
@@ -244,6 +294,7 @@ const CreateReport = (props) => {
                     onChange={async (e) => {
                       setState({ sprintNum: e.target.value, report: [] });
                       refetchTasks();
+                      createReport();
                     }}
                     inputProps={{
                       name: "sprintNum",
@@ -279,9 +330,18 @@ const CreateReport = (props) => {
                 // {User Story Title}
                 // DataGrid with columns: {subtask} {status} {timespent} {re-estimate}
                 // DataGrid with columns: {userstory} {subtask} {status} {timespent} {re-estimate} */}
-                  <div style={{ height: 400, marginTop: 20, marginBottom: 20 }}>
-                    {!loadingTasks && state.report != undefined && (
-                      <DataGrid rows={state.report} columns={columns} />
+                  <div
+                    style={{
+                      height: 500,
+                      marginTop: 20,
+                      marginBottom: 20,
+                      display: "flex",
+                    }}
+                  >
+                    {!loadingTasks && state.report !== undefined && (
+                      <div style={{ flexGrow: 1 }}>
+                        <DataGrid rows={state.report} columns={columns} />
+                      </div>
                     )}
                   </div>
                   <Typography
