@@ -18,7 +18,7 @@ import {
 } from "@material-ui/icons";
 import { DataGrid } from "@material-ui/data-grid";
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
 import XLSX from "xlsx";
 
 import theme from "../theme";
@@ -195,7 +195,7 @@ const CreateReport = (props) => {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "SheetJS");
       /* generate XLSX file and send to client */
-      XLSX.writeFile(wb, "sheetjs.xlsx");
+      XLSX.writeFile(wb, "sprintcompass_report.xlsx");
       sendParentMsg("report generated as Excel Spreadsheet");
     } else sendParentMsg("nothing to report");
   };
